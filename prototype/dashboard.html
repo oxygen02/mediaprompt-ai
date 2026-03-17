@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediaPrompt AI - 工作台</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+    
+    body {
+      background: #09090B;
+      min-height: 100vh;
+    }
+    
+    .sidebar {
+      background: #18181B;
+      border-right: 1px solid #27272A;
+    }
+    
+    .nav-item {
+      transition: all 0.2s ease;
+    }
+    .nav-item:hover {
+      background: #27272A;
+    }
+    .nav-item.active {
+      background: #27272A;
+    }
+    
+    .project-card {
+      transition: all 0.2s ease;
+    }
+    .project-card:hover {
+      border-color: #3F3F46;
+      transform: translateY(-2px);
+    }
+    
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #3F3F46; border-radius: 3px; }
+  </style>
+</head>
+<body class="bg-[#09090B] text-white">
+  
+  <div class="flex min-h-screen">
+    
+    <!-- 左侧导航 -->
+    <aside class="sidebar w-64 flex flex-col">
+      
+      <!-- 用户信息 -->
+      <div class="p-5 border-b border-gray-800">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+            <span class="text-white font-medium">U</span>
+          </div>
+          <div>
+            <p class="font-medium text-white">用户名</p>
+            <p class="text-xs text-gray-500">Pro 会员</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 导航菜单 -->
+      <nav class="flex-1 p-3">
+        <a href="#" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          <span>创建分析</span>
+        </a>
+        <a href="#" class="nav-item active flex items-center gap-3 px-4 py-3 rounded-lg text-white">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+          </svg>
+          <span>仪表盘</span>
+        </a>
+        <a href="#" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+          </svg>
+          <span>历史记录</span>
+        </a>
+        <a href="#" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+          </svg>
+          <span>收藏夹</span>
+        </a>
+      </nav>
+      
+      <!-- 底部使用量 -->
+      <div class="p-5 border-t border-gray-800">
+        <div class="text-xs text-gray-500 mb-2">今日用量</div>
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-gray-400">剩余次数</span>
+          <span class="text-violet-400 font-medium">97/100</span>
+        </div>
+        <div class="mt-2 h-1.5 bg-gray-800 rounded-full overflow-hidden">
+          <div class="h-full bg-gradient-to-r from-violet-500 to-purple-600 rounded-full" style="width: 97%"></div>
+        </div>
+      </div>
+      
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="flex-1 flex flex-col">
+      
+      <!-- 顶部工具栏 -->
+      <header class="h-16 border-b border-gray-800 flex items-center justify-between px-6">
+        <div class="flex items-center gap-4 flex-1">
+          <div class="relative flex-1 max-w-md">
+            <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input type="text" placeholder="搜索历史记录..." class="w-full pl-10 pr-4 py-2 bg-[#18181B] border border-gray-800 rounded-lg text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-gray-700">
+          </div>
+        </div>
+        <div class="flex items-center gap-4">
+          <span class="text-sm text-gray-500">👋 欢迎回来</span>
+          <button class="px-4 py-2 bg-gradient-to-r from-violet-500 to-purple-600 rounded-lg text-sm font-medium text-white">
+            + 新建分析
+          </button>
+        </div>
+      </header>
+      
+      <!-- 内容区 -->
+      <div class="flex-1 p-6 overflow-auto">
+        
+        <!-- 欢迎标题 -->
+        <div class="mb-8">
+          <h1 class="text-2xl font-semibold text-white mb-2">工作台</h1>
+          <p class="text-gray-500">查看你的分析历史和收藏</p>
+        </div>
+        
+        <!-- 项目列表 -->
+        <div class="grid grid-cols-3 gap-4">
+          
+          <!-- 示例项目卡片 -->
+          <div class="project-card bg-[#18181B] border border-gray-800 rounded-xl overflow-hidden cursor-pointer">
+            <div class="aspect-video bg-gradient-to-br from-violet-900/50 to-purple-900/50 flex items-center justify-center">
+              <span class="text-4xl">📝</span>
+            </div>
+            <div class="p-4">
+              <h3 class="font-medium text-white mb-1 truncate">电商产品文案分析</h3>
+              <div class="flex items-center justify-between text-xs text-gray-500">
+                <span>文字分析</span>
+                <span>2小时前</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="project-card bg-[#18181B] border border-gray-800 rounded-xl overflow-hidden cursor-pointer">
+            <div class="aspect-video bg-gradient-to-br from-pink-900/50 to-red-900/50 flex items-center justify-center">
+              <span class="text-4xl">🖼️</span>
+            </div>
+            <div class="p-4">
+              <h3 class="font-medium text-white mb-1 truncate">AI 风格图片提示词</h3>
+              <div class="flex items-center justify-between text-xs text-gray-500">
+                <span>图片分析</span>
+                <span>昨天</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="project-card bg-[#18181B] border border-gray-800 rounded-xl overflow-hidden cursor-pointer">
+            <div class="aspect-video bg-gradient-to-br from-blue-900/50 to-cyan-900/50 flex items-center justify-center">
+              <span class="text-4xl">🎬</span>
+            </div>
+            <div class="p-4">
+              <h3 class="font-medium text-white mb-1 truncate">抖音广告视频拆解</h3>
+              <div class="flex items-center justify-between text-xs text-gray-500">
+                <span>视频分析</span>
+                <span>3天前</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="project-card bg-[#18181B] border border-gray-800 rounded-xl overflow-hidden cursor-pointer">
+            <div class="aspect-video bg-gradient-to-br from-green-900/50 to-emerald-900/50 flex items-center justify-center">
+              <span class="text-4xl">🌐</span>
+            </div>
+            <div class="p-4">
+              <h3 class="font-medium text-white mb-1 truncate">YouWare 风格分析</h3>
+              <div class="flex items-center justify-between text-xs text-gray-500">
+                <span>网页分析</span>
+                <span>1周前</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="project-card bg-[#18181B] border border-gray-800 rounded-xl overflow-hidden cursor-pointer">
+            <div class="aspect-video bg-gradient-to-br from-orange-900/50 to-yellow-900/50 flex items-center justify-center">
+              <span class="text-4xl">📝</span>
+            </div>
+            <div class="p-4">
+              <h3 class="font-medium text-white mb-1 truncate">商业策划书结构分析</h3>
+              <div class="flex items-center justify-between text-xs text-gray-500">
+                <span>文字分析</span>
+                <span>1周前</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 新建卡片 -->
+          <div class="project-card bg-[#18181B] border border-dashed border-gray-700 rounded-xl overflow-hidden cursor-pointer flex items-center justify-center min-h-[180px] hover:border-violet-500 hover:border-solid">
+            <div class="text-center">
+              <div class="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center mx-auto mb-3">
+                <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+              </div>
+              <p class="text-gray-500 text-sm">新建分析</p>
+            </div>
+          </div>
+          
+        </div>
+        
+      </div>
+      
+    </main>
+    
+  </div>
+
+</body>
+</html>

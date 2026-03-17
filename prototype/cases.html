@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>案例展示 - MediaPrompt AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+    body { background: #f5f5f7; }
+    
+    .sidebar { 
+      background: #ffffff; 
+      border-right: 1px solid #e5e5e5; 
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      z-index: 20;
+    }
+    .main-content { margin-left: 208px; min-height: 100vh; }
+    .nav-item { transition: all 0.15s ease; }
+    .nav-item:hover { background: #f5f5f7; }
+    .nav-item.active { background: #e8e8ed; }
+    
+    .logo-bg { background: linear-gradient(135deg, #52525b 0%, #3f3f46 100%); }
+    
+    .case-card {
+      background: #ffffff;
+      border: 1px solid #e5e5e5;
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+    .case-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      transform: translateY(-2px);
+    }
+    
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .tag-model { background: #e0f2fe; color: #0369a1; }
+    .tag-style { background: #fef3c7; color: #92400e; }
+    .tag-tool { background: #dcfce7; color: #166534; }
+    
+    .compare-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    
+    .result-box {
+      background: #fafafa;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      padding: 12px;
+      min-height: 120px;
+    }
+    
+    .prompt-box {
+      background: #f8fafc;
+      border-left: 3px solid #52525b;
+      padding: 12px 16px;
+      border-radius: 0 8px 8px 0;
+    }
+    
+    .tab-btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: all 0.15s ease;
+    }
+    .tab-btn.active {
+      background: #52525b;
+      color: white;
+    }
+    .tab-btn:not(.active) {
+      color: #6b7280;
+    }
+    .tab-btn:not(.active):hover {
+      background: #f3f4f6;
+    }
+  </style>
+</head>
+<body class="bg-[#f5f5f7] text-gray-800">
+  
+  <!-- 左侧固定导航栏 -->
+  <aside class="sidebar w-52 flex-shrink-0 flex flex-col">
+    <div class="p-4 border-b border-gray-200">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg logo-bg flex items-center justify-center">
+          <span class="text-white font-bold text-sm">M</span>
+        </div>
+        <span class="font-semibold text-gray-800">MediaPrompt</span>
+      </div>
+    </div>
+    
+    <nav class="flex-1 p-3 overflow-y-auto">
+      <div class="text-xs text-gray-400 px-3 py-2">分析工具</div>
+      <a href="index-v19.html" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        <span>文档分析</span>
+      </a>
+      <a href="index-v19.html" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        <span>图片分析</span>
+      </a>
+      <a href="index-v19.html" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+        <span>视频分析</span>
+      </a>
+      <a href="index-v19.html" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg>
+        <span>网页分析</span>
+      </a>
+      
+      <div class="text-xs text-gray-400 px-3 py-2 mt-4">案例展示</div>
+      <a href="#document" class="nav-item active flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-700">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+        <span>文档案例</span>
+      </a>
+      <a href="#image" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        <span>图片案例</span>
+      </a>
+      <a href="#video" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+        <span>视频案例</span>
+      </a>
+      <a href="#website" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg>
+        <span>网页案例</span>
+      </a>
+      
+      <div class="text-xs text-gray-400 px-3 py-2 mt-4">个人中心</div>
+      <a href="#" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span>历史记录</span>
+      </a>
+      <a href="#" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span>设置</span>
+      </a>
+    </nav>
+    
+    <div class="p-4 border-t border-gray-200">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center"><span class="text-xs text-gray-500">U</span></div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm text-gray-700 truncate">用户名</p>
+          <p class="text-xs text-gray-400">免费用户</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 主内容区 -->
+  <div class="main-content">
+    <nav class="h-14 border-b border-gray-200 flex items-center justify-between px-8 bg-white sticky top-0 z-10">
+      <div class="flex items-center gap-6">
+        <a href="index-v19.html" class="text-sm text-gray-500">首页</a>
+        <a href="#" class="text-sm text-gray-500">定价</a>
+        <a href="#" class="text-sm text-gray-500">关于</a>
+      </div>
+      <div class="flex items-center gap-4">
+        <button class="text-sm text-gray-500 hover:text-gray-800">登录</button>
+        <button class="bg-gray-700 px-4 py-1.5 rounded text-sm text-white hover:bg-gray-800">注册</button>
+      </div>
+    </nav>
+
+    <div class="p-6 max-w-5xl mx-auto">
+      
+      <!-- 页面标题 -->
+      <div class="mb-6">
+        <h1 class="text-xl font-semibold text-gray-800 mb-2">案例展示</h1>
+        <p class="text-gray-500 text-sm">同一段提示词，不同模型、工具、风格生成的输出对比</p>
+      </div>
+      
+      <!-- 分类标签 -->
+      <div class="flex gap-2 mb-6">
+        <button class="tab-btn active" data-tab="document">📄 文档案例</button>
+        <button class="tab-btn" data-tab="image">🖼️ 图片案例</button>
+        <button class="tab-btn" data-tab="video">🎬 视频案例</button>
+        <button class="tab-btn" data-tab="website">🌐 网页案例</button>
+      </div>
+      
+      <!-- 文档案例 -->
+      <div id="document-cases" class="case-section">
+        
+        <!-- 案例1 -->
+        <div class="case-card mb-6">
+          <div class="p-4 border-b border-gray-100">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-medium text-gray-800">短视频运营策略分析</h3>
+              <span class="text-xs text-gray-400">2026-03-17</span>
+            </div>
+            <div class="prompt-box">
+              <p class="text-sm text-gray-600">原始提示词：</p>
+              <p class="text-sm text-gray-700 mt-1">你是一位短视频运营策略专家，帮助用户分析抖音账号数据，提供涨粉建议...</p>
+            </div>
+          </div>
+          
+          <div class="p-4">
+            <p class="text-sm text-gray-500 mb-3">不同模型输出对比：</p>
+            <div class="compare-grid">
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="tag tag-model">GPT-4o</span>
+                  <span class="tag tag-style">专业严谨</span>
+                </div>
+                <div class="result-box">
+                  <p class="text-xs text-gray-600 leading-relaxed">基于您的账号数据分析，建议从以下三个维度优化：1. 内容定位：聚焦垂直领域，打造差异化人设；2. 发布策略：黄金时段（18:00-22:00）发布，保持日更频率；3. 互动运营：积极回复评论，引导用户参与...</p>
+                </div>
+              </div>
+              
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="tag tag-model">Claude 3.5</span>
+                  <span class="tag tag-style">亲和易懂</span>
+                </div>
+                <div class="result-box">
+                  <p class="text-xs text-gray-600 leading-relaxed">你好！看了你的账号数据，我有几点想法想分享：首先，你的内容方向可以更聚焦一些，比如专做一个细分领域；其次，发布时间很重要，晚上6-10点是流量高峰期；最后，多和粉丝互动，回复评论能增加粘性...</p>
+                </div>
+              </div>
+              
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="tag tag-model">文心一言</span>
+                  <span class="tag tag-style">简洁实用</span>
+                </div>
+                <div class="result-box">
+                  <p class="text-xs text-gray-600 leading-relaxed">运营建议：1. 定位清晰化 - 选择垂直赛道；2. 内容精品化 - 提升视频质量；3. 发布规律化 - 固定时间更新；4. 互动常态化 - 及时回复评论；5. 数据监测化 - 关注关键指标变化。</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 案例2 -->
+        <div class="case-card mb-6">
+          <div class="p-4 border-b border-gray-100">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-medium text-gray-800">产品需求文档撰写</h3>
+              <span class="text-xs text-gray-400">2026-03-16</span>
+            </div>
+            <div class="prompt-box">
+              <p class="text-sm text-gray-600">原始提示词：</p>
+              <p class="text-sm text-gray-700 mt-1">你是一位资深产品经理，帮助撰写一份用户登录功能的PRD文档...</p>
+            </div>
+          </div>
+          
+          <div class="p-4">
+            <p class="text-sm text-gray-500 mb-3">不同工具输出对比：</p>
+            <div class="compare-grid">
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="tag tag-tool">Notion AI</span>
+                  <span class="tag tag-style">模板化</span>
+                </div>
+                <div class="result-box">
+                  <p class="text-xs text-gray-600 leading-relaxed">## 需求背景<br>用户登录是系统基础功能...<br>## 功能描述<br>支持手机号、邮箱、第三方登录...<br>## 验收标准<br>1. 登录成功率 > 99%<br>2. 响应时间 < 2s</p>
+                </div>
+              </div>
+              
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="tag tag-tool">飞书文档</span>
+                  <span class="tag tag-style">结构化</span>
+                </div>
+                <div class="result-box">
+                  <p class="text-xs text-gray-600 leading-relaxed">**需求名称**：用户登录功能<br>**优先级**：P0<br>**需求目标**：实现安全便捷的用户认证<br>**功能清单**：<br>- 手机验证码登录<br>- 密码登录<br>- 微信/支付宝授权登录</p>
+                </div>
+              </div>
+              
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="tag tag-tool">语雀</span>
+                  <span class="tag tag-style">详细版</span>
+                </div>
+                <div class="result-box">
+                  <p class="text-xs text-gray-600 leading-relaxed">### 一、需求概述<br>本需求旨在为用户提供安全、便捷的登录体验，支持多种登录方式，降低用户使用门槛...<br>### 二、用户故事<br>作为一个新用户，我希望能够快速注册登录，以便使用平台功能...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+      
+      <!-- 图片案例 -->
+      <div id="image-cases" class="case-section hidden">
+        <div class="case-card mb-6">
+          <div class="p-4 border-b border-gray-100">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-medium text-gray-800">赛博朋克风格城市</h3>
+              <span class="text-xs text-gray-400">2026-03-17</span>
+            </div>
+            <div class="prompt-box">
+              <p class="text-sm text-gray-600">原始提示词：</p>
+              <p class="text-sm text-gray-700 mt-1">A futuristic cyberpunk city at night, neon lights reflecting on wet streets, flying cars, holographic advertisements, cinematic lighting, 8k ultra detailed</p>
+            </div>
+          </div>
+          
+          <div class="p-4">
+            <p class="text-sm text-gray-500 mb-3">不同模型输出对比：</p>
+            <div class="compare-grid">
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="tag tag-model">Midjourney</span>
+                  <span class="tag tag-style">艺术感强</span>
+                </div>
+                <div class="result-box aspect-square flex items-center justify-center">
+                  <div class="text-center">
+                    <div class="w-full h-32 bg-gradient-to-br from-purple-900 via-blue-800 to-cyan-600 rounded-lg mb-2 flex items-center justify-center">
+                      <span class="text-white text-xs">🌃 赛博朋克城市</span>
+                    </div>
+                    <p class="text-xs text-gray-400">高对比度、霓虹氛围</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="tag tag-model">DALL-E 3</span>
+                  <span class="tag tag-style">写实精细</span>
+                </div>
+                <div class="result-box aspect-square flex items-center justify-center">
+                  <div class="text-center">
+                    <div class="w-full h-32 bg-gradient-to-br from-slate-800 via-indigo-900 to-pink-700 rounded-lg mb-2 flex items-center justify-center">
+                      <span class="text-white text-xs">🏙️ 未来都市夜景</span>
+                    </div>
+                    <p class="text-xs text-gray-400">细节丰富、层次分明</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="tag tag-model">Stable Diffusion</span>
+                  <span class="tag tag-style">可定制</span>
+                </div>
+                <div class="result-box aspect-square flex items-center justify-center">
+                  <div class="text-center">
+                    <div class="w-full h-32 bg-gradient-to-br from-gray-900 via-violet-800 to-teal-500 rounded-lg mb-2 flex items-center justify-center">
+                      <span class="text-white text-xs">🌆 霓虹都市</span>
+                    </div>
+                    <p class="text-xs text-gray-400">参数可控、风格多样</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 视频案例 -->
+      <div id="video-cases" class="case-section hidden">
+        <div class="case-card mb-6">
+          <div class="p-4 border-b border-gray-100">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-medium text-gray-800">产品宣传短视频</h3>
+              <span class="text-xs text-gray-400">2026-03-17</span>
+            </div>
+            <div class="prompt-box">
+              <p class="text-sm text-gray-600">原始提示词：</p>
+              <p class="text-sm text-gray-700 mt-1">15秒产品宣传视频，展示智能手表功能，快节奏剪辑，动感背景音乐，年轻活力风格</p>
+            </div>
+          </div>
+          
+          <div class="p-4">
+            <p class="text-sm text-gray-500 mb-3">不同工具输出对比：</p>
+            <div class="compare-grid">
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="tag tag-tool">剪映</span>
+                  <span class="tag tag-style">模板化</span>
+                </div>
+                <div class="result-box aspect-video flex items-center justify-center bg-gray-100">
+                  <div class="text-center">
+                    <span class="text-2xl">🎬</span>
+                    <p class="text-xs text-gray-500 mt-1">自动匹配模板</p>
+                    <p class="text-xs text-gray-400">一键生成</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="tag tag-tool">Runway</span>
+                  <span class="tag tag-style">AI生成</span>
+                </div>
+                <div class="result-box aspect-video flex items-center justify-center bg-gray-100">
+                  <div class="text-center">
+                    <span class="text-2xl">🤖</span>
+                    <p class="text-xs text-gray-500 mt-1">AI视频生成</p>
+                    <p class="text-xs text-gray-400">创意自由度高</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="tag tag-tool">Pika</span>
+                  <span class="tag tag-style">动态效果</span>
+                </div>
+                <div class="result-box aspect-video flex items-center justify-center bg-gray-100">
+                  <div class="text-center">
+                    <span class="text-2xl">✨</span>
+                    <p class="text-xs text-gray-500 mt-1">图生视频</p>
+                    <p class="text-xs text-gray-400">效果流畅</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 网页案例 -->
+      <div id="website-cases" class="case-section hidden">
+        <div class="case-card mb-6">
+          <div class="p-4 border-b border-gray-100">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-medium text-gray-800">SaaS产品落地页</h3>
+              <span class="text-xs text-gray-400">2026-03-17</span>
+            </div>
+            <div class="prompt-box">
+              <p class="text-sm text-gray-600">原始提示词：</p>
+              <p class="text-sm text-gray-700 mt-1">设计一个SaaS产品落地页，包含Hero区、功能介绍、定价方案、用户评价、CTA按钮，现代简约风格</p>
+            </div>
+          </div>
+          
+          <div class="p-4">
+            <p class="text-sm text-gray-500 mb-3">不同工具输出对比：</p>
+            <div class="compare-grid">
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="tag tag-tool">v0.dev</span>
+                  <span class="tag tag-style">React组件</span>
+                </div>
+                <div class="result-box">
+                  <p class="text-xs text-gray-600 leading-relaxed">生成完整的React/Next.js代码，包含：<br>• 响应式布局<br>• Tailwind CSS样式<br>• 动画效果<br>• 暗色模式支持</p>
+                </div>
+              </div>
+              
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="tag tag-tool">Framer AI</span>
+                  <span class="tag tag-style">可视化</span>
+                </div>
+                <div class="result-box">
+                  <p class="text-xs text-gray-600 leading-relaxed">直接生成可发布网站：<br>• 无需编码<br>• 实时预览<br>• 一键部署<br>• 支持自定义域名</p>
+                </div>
+              </div>
+              
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="tag tag-tool">Bolt.new</span>
+                  <span class="tag tag-style">全栈开发</span>
+                </div>
+                <div class="result-box">
+                  <p class="text-xs text-gray-600 leading-relaxed">完整项目生成：<br>• 前端 + 后端<br>• 数据库设计<br>• API接口<br>• 部署配置</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+
+  <script>
+    // 标签切换
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        const tab = this.dataset.tab;
+        document.querySelectorAll('.case-section').forEach(s => s.classList.add('hidden'));
+        document.getElementById(tab + '-cases').classList.remove('hidden');
+      });
+    });
+  </script>
+</body>
+</html>

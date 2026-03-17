@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediaPrompt AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+    
+    body {
+      background: #ffffff;
+      min-height: 100vh;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    }
+    
+    .input-field {
+      transition: all 0.2s ease;
+    }
+    .input-field:focus {
+      outline: none;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+  </style>
+</head>
+<body class="bg-white">
+  
+  <!-- 顶部导航 - YouWare 风格 -->
+  <nav class="fixed top-0 left-0 right-0 bg-white z-50">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      <!-- Logo -->
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+          <span class="text-white font-bold text-sm">M</span>
+        </div>
+        <span class="font-semibold text-gray-900">MediaPrompt</span>
+      </div>
+      
+      <!-- 右侧按钮 -->
+      <div>
+        <button class="btn-primary px-5 py-2.5 rounded-lg text-sm text-white font-medium">
+          免费开始
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 主内容区 - 居中卡片 -->
+  <main class="pt-32 pb-20">
+    <div class="max-w-md mx-auto px-6">
+      
+      <!-- 居中卡片 - YouWare 风格 -->
+      <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
+        
+        <!-- 标题 -->
+        <div class="text-center mb-8">
+          <h1 class="text-2xl font-bold text-gray-900 mb-2">
+            上传文件
+          </h1>
+          <p class="text-gray-500 text-sm">
+            文字 · 图片 · 视频 · 网页
+          </p>
+        </div>
+        
+        <!-- 类型选择 -->
+        <div class="grid grid-cols-4 gap-2 mb-6">
+          <button class="type-btn p-3 rounded-xl border border-gray-200 text-center hover:border-violet-500" data-type="text">
+            <span class="text-xl block mb-1">📝</span>
+            <span class="text-xs text-gray-600">文字</span>
+          </button>
+          <button class="type-btn p-3 rounded-xl border border-gray-200 text-center hover:border-violet-500" data-type="image">
+            <span class="text-xl block mb-1">🖼️</span>
+            <span class="text-xs text-gray-600">图片</span>
+          </button>
+          <button class="type-btn p-3 rounded-xl border border-gray-200 text-center hover:border-violet-500" data-type="video">
+            <span class="text-xl block mb-1">🎬</span>
+            <span class="text-xs text-gray-600">视频</span>
+          </button>
+          <button class="type-btn p-3 rounded-xl border border-gray-200 text-center hover:border-violet-500" data-type="website">
+            <span class="text-xl block mb-1">🌐</span>
+            <span class="text-xs text-gray-600">网页</span>
+          </button>
+        </div>
+        
+        <!-- 上传区域 -->
+        <div class="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center mb-6 cursor-pointer hover:border-violet-500 hover:bg-violet-50/50 transition" id="uploadZone">
+          <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+          </div>
+          <p class="text-gray-700 font-medium mb-1">拖放文件或点击上传</p>
+          <p class="text-gray-400 text-sm" id="uploadHint">支持 Word/PDF/TXT/Markdown</p>
+        </div>
+        
+        <!-- 或者分隔线 -->
+        <div class="flex items-center gap-4 mb-6">
+          <div class="flex-1 h-px bg-gray-200"></div>
+          <span class="text-gray-400 text-sm">或者</span>
+          <div class="flex-1 h-px bg-gray-200"></div>
+        </div>
+        
+        <!-- URL输入 -->
+        <input 
+          type="text" 
+          placeholder="粘贴网页链接..." 
+          class="input-field w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-700 mb-4"
+        >
+        
+        <!-- 主按钮 -->
+        <button class="btn-primary w-full py-3 rounded-xl text-white font-medium mb-4">
+          开始分析
+        </button>
+        
+        <!-- 底部说明 -->
+        <p class="text-center text-gray-400 text-xs">
+          无需信用卡 · 每天免费3次 · 1分钟出结果
+        </p>
+        
+      </div>
+      
+    </div>
+  </main>
+
+  <!-- 底部 -->
+  <footer class="py-8">
+    <div class="max-w-6xl mx-auto px-6 flex items-center justify-between text-sm text-gray-400">
+      <span>© 2026 MediaPrompt AI</span>
+      <div class="flex gap-6">
+        <a href="#" class="hover:text-gray-600">隐私</a>
+        <a href="#" class="hover:text-gray-600">条款</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // 类型选择
+    const typeBtns = document.querySelectorAll('.type-btn');
+    const hints = {
+      text: '支持 Word/PDF/TXT/Markdown',
+      image: '支持 JPG/PNG/WebP，最大 20MB',
+      video: '支持 MP4/MOV，≤30秒',
+      website: '输入网页URL或上传截图'
+    };
+    
+    typeBtns.forEach(btn => {
+      btn.addEventListener('click', function() {
+        typeBtns.forEach(b => b.classList.remove('border-violet-500', 'bg-violet-50'));
+        this.classList.add('border-violet-500', 'bg-violet-50');
+        document.getElementById('uploadHint').textContent = hints[this.dataset.type];
+      });
+    });
+    
+    // 默认选中第一个
+    typeBtns[0].classList.add('border-violet-500', 'bg-violet-50');
+  </script>
+
+</body>
+</html>

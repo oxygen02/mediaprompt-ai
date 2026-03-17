@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediaPrompt AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0C0C0F;
+      --bg-card: #16161A;
+      --bg-hover: #1E1E24;
+      --accent: #6366F1;
+      --accent-light: #818CF8;
+      --text-primary: #FAFAFA;
+      --text-secondary: #9CA3AF;
+      --text-dim: #6B7280;
+      --border: #27272A;
+    }
+    
+    * { font-family: 'DM Sans', 'PingFang SC', sans-serif; box-sizing: border-box; }
+    
+    body { background: var(--bg-dark); color: var(--text-primary); margin: 0; }
+    
+    .sidebar {
+      background: var(--bg-card);
+      border-right: 1px solid var(--border);
+    }
+    
+    .nav-item {
+      transition: all 0.2s ease;
+    }
+    .nav-item:hover {
+      background: var(--bg-hover);
+    }
+    .nav-item.active {
+      background: rgba(99, 102, 241, 0.15);
+      border-left: 2px solid var(--accent);
+    }
+    
+    .type-btn {
+      transition: all 0.2s ease;
+      border: 1px solid var(--border);
+    }
+    .type-btn:hover {
+      border-color: var(--accent);
+    }
+    .type-btn.active {
+      background: rgba(99, 102, 241, 0.2);
+      border-color: var(--accent);
+    }
+    
+    .upload-zone {
+      border: 2px dashed var(--border);
+      transition: all 0.3s ease;
+    }
+    .upload-zone:hover {
+      border-color: var(--accent);
+      background: rgba(99, 102, 241, 0.05);
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+      transition: all 0.2s ease;
+    }
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    }
+    
+    /* 引导动画 */
+    .guide-bar {
+      background: linear-gradient(90deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+      border-bottom: 1px solid var(--border);
+    }
+    
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .guide-animate {
+      animation: slideIn 0.5s ease forwards;
+    }
+    
+    @keyframes pulse-dot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.2); opacity: 0.7; }
+    }
+    .pulse-dot {
+      animation: pulse-dot 1.5s ease-in-out infinite;
+    }
+    
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  
+  <!-- 引导动画条 - 页面顶端 -->
+  <div id="guideBar" class="guide-bar px-6 py-3 flex items-center justify-between guide-animate">
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2">
+        <div class="w-6 h-6 rounded-full bg-violet-500/20 flex items-center justify-center pulse-dot">
+          <span class="text-xs text-violet-400 font-medium">1</span>
+        </div>
+        <span class="text-sm text-gray-300">选择文件类型</span>
+      </div>
+      <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+      </svg>
+      <div class="flex items-center gap-2">
+        <div class="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center">
+          <span class="text-xs text-gray-400 font-medium">2</span>
+        </div>
+        <span class="text-sm text-gray-500">上传文件</span>
+      </div>
+      <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+      </svg>
+      <div class="flex items-center gap-2">
+        <div class="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center">
+          <span class="text-xs text-gray-400 font-medium">3</span>
+        </div>
+        <span class="text-sm text-gray-500">获取结果</span>
+      </div>
+    </div>
+    <label class="flex items-center gap-2 cursor-pointer">
+      <input type="checkbox" id="hideGuide" class="w-4 h-4 rounded bg-gray-700 border-gray-600">
+      <span class="text-xs text-gray-500">下次不再显示</span>
+    </label>
+  </div>
+
+  <div class="flex" style="height: calc(100vh - 49px);">
+    
+    <!-- 左侧导航栏 -->
+    <aside class="sidebar w-56 flex-shrink-0 flex flex-col">
+      <!-- Logo -->
+      <div class="p-4 border-b border-gray-800">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+            <span class="text-white font-bold text-sm">M</span>
+          </div>
+          <span class="font-semibold text-white">MediaPrompt</span>
+        </div>
+      </div>
+      
+      <!-- 导航菜单 -->
+      <nav class="flex-1 p-3 space-y-1">
+        <div class="text-xs text-gray-500 px-3 py-2">分析工具</div>
+        <a href="#" class="nav-item active flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-200">
+          <svg class="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          文字分析
+        </a>
+        <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+          图片分析
+        </a>
+        <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+          </svg>
+          视频分析
+        </a>
+        <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/>
+          </svg>
+          网页分析
+        </a>
+        
+        <div class="text-xs text-gray-500 px-3 py-2 mt-4">个人中心</div>
+        <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          历史记录
+        </a>
+        <a href="#" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          设置
+        </a>
+      </nav>
+      
+      <!-- 底部用户信息 -->
+      <div class="p-4 border-t border-gray-800">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
+            <span class="text-xs text-gray-400">U</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm text-gray-300 truncate">免费用户</p>
+            <p class="text-xs text-gray-500">剩余 3 次/天</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="flex-1 flex flex-col overflow-hidden">
+      
+      <!-- 顶部工具栏 -->
+      <header class="h-14 border-b border-gray-800 flex items-center justify-between px-6 bg-[#0C0C0F]">
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-gray-400">分析模式：</span>
+          <button class="type-btn active px-3 py-1.5 rounded-lg text-xs text-gray-300" data-type="text">文字</button>
+          <button class="type-btn px-3 py-1.5 rounded-lg text-xs text-gray-400" data-type="image">图片</button>
+          <button class="type-btn px-3 py-1.5 rounded-lg text-xs text-gray-400" data-type="video">视频</button>
+          <button class="type-btn px-3 py-1.5 rounded-lg text-xs text-gray-400" data-type="website">网页</button>
+        </div>
+        <button class="btn-primary px-4 py-2 rounded-lg text-sm text-white font-medium">
+          升级 Pro
+        </button>
+      </header>
+
+      <!-- 核心工作区 - 一屏内 -->
+      <div class="flex-1 p-6 overflow-auto">
+        <div class="max-w-3xl mx-auto">
+          
+          <!-- 标题 -->
+          <div class="text-center mb-8">
+            <h1 class="text-2xl font-semibold text-white mb-2">上传你喜欢的内容</h1>
+            <p class="text-gray-500 text-sm">AI 帮你分析并生成可用的提示词和工具推荐</p>
+          </div>
+          
+          <!-- 上传区域 -->
+          <div class="upload-zone rounded-xl p-10 text-center cursor-pointer mb-6">
+            <div class="flex flex-col items-center gap-3">
+              <div class="w-14 h-14 rounded-full bg-gray-800 flex items-center justify-center">
+                <svg class="w-7 h-7 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                </svg>
+              </div>
+              <div>
+                <p class="text-gray-300 font-medium">拖放文件或点击上传</p>
+                <p class="text-gray-600 text-sm mt-1">支持 Word/PDF/TXT/Markdown</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 或者输入链接 -->
+          <div class="flex gap-3 mb-8">
+            <input type="text" placeholder="或粘贴网页链接..." class="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-sm text-gray-300 focus:outline-none focus:border-violet-500">
+            <button class="btn-primary px-6 py-3 rounded-xl text-sm text-white font-medium">
+              开始分析
+            </button>
+          </div>
+          
+          <!-- 分析选项 -->
+          <div class="bg-gray-900/50 rounded-xl p-4 border border-gray-800">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-300 font-medium">输出选项</p>
+                <p class="text-xs text-gray-500 mt-1">选择你需要的输出内容</p>
+              </div>
+              <div class="flex gap-4">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+                  <span class="text-sm text-gray-400">提示词</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+                  <span class="text-sm text-gray-400">工具推荐</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+                  <span class="text-sm text-gray-400">代码</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    // 引导条控制
+    const hideGuide = document.getElementById('hideGuide');
+    const guideBar = document.getElementById('guideBar');
+    
+    // 检查本地存储
+    if (localStorage.getItem('hideGuide') === 'true') {
+      guideBar.classList.add('hidden');
+    }
+    
+    hideGuide.addEventListener('change', function() {
+      if (this.checked) {
+        localStorage.setItem('hideGuide', 'true');
+      } else {
+        localStorage.removeItem('hideGuide');
+      }
+    });
+    
+    // 文件类型切换
+    const typeBtns = document.querySelectorAll('.type-btn');
+    const hints = {
+      text: '支持 Word/PDF/TXT/Markdown',
+      image: '支持 JPG/PNG/WebP/GIF，最大 20MB',
+      video: '支持 MP4/MOV，≤30秒',
+      website: '输入网页URL或上传网页截图'
+    };
+    
+    typeBtns.forEach(btn => {
+      btn.addEventListener('click', function() {
+        typeBtns.forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        const type = this.dataset.type;
+        document.querySelector('.upload-zone p:last-child').textContent = hints[type];
+      });
+    });
+    
+    // 导航切换
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+      item.addEventListener('click', function(e) {
+        e.preventDefault();
+        navItems.forEach(n => n.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+  </script>
+
+</body>
+</html>

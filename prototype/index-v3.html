@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediaPrompt AI - 设计复刻，人人可用</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { font-family: 'PingFang SC', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, sans-serif; }
+    .gradient-text {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .sidebar-item:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .sidebar-item.active {
+      background: rgba(255, 255, 255, 0.15);
+      border-left: 3px solid #a78bfa;
+    }
+    .upload-zone {
+      background: linear-gradient(135deg, #f8faff 0%, #f0f4ff 100%);
+      border: 2px dashed #cbd5e1;
+      transition: all 0.3s ease;
+    }
+    .upload-zone:hover {
+      border-color: #667eea;
+      background: linear-gradient(135deg, #f0f4ff 0%, #e8ecff 100%);
+    }
+    .mode-card {
+      transition: all 0.2s ease;
+    }
+    .mode-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.08);
+    }
+    .mode-card.selected {
+      border-color: #667eea;
+      background: linear-gradient(135deg, #f8faff 0%, #f0f4ff 100%);
+    }
+    .tag-btn {
+      transition: all 0.2s ease;
+    }
+    .tag-btn.selected {
+      background: #667eea;
+      color: white;
+      border-color: #667eea;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  
+  <!-- 顶部导航栏 -->
+  <nav class="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 z-50 flex items-center px-6">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg flex items-center justify-center">
+        <span class="text-white text-sm font-bold">M</span>
+      </div>
+      <span class="font-semibold text-gray-900">MediaPrompt AI</span>
+    </div>
+    
+    <div class="flex-1 flex justify-center">
+      <div class="relative w-96">
+        <input type="text" placeholder="搜索功能或输入网址..." class="w-full px-4 py-2 pl-10 bg-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+        <svg class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+      </div>
+    </div>
+    
+    <div class="flex items-center gap-4">
+      <span class="text-sm text-gray-500">剩余次数: <span class="text-violet-600 font-medium">3</span>/日</span>
+      <button class="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-violet-700 transition">
+        升级 Pro
+      </button>
+      <div class="w-8 h-8 bg-gray-200 rounded-full"></div>
+    </div>
+  </nav>
+
+  <div class="flex pt-16">
+    
+    <!-- 左侧导航栏 - 深色 -->
+    <aside class="fixed left-0 top-16 bottom-0 w-60 bg-gradient-to-b from-gray-900 to-gray-800 overflow-y-auto">
+      <div class="p-4">
+        <p class="text-xs text-gray-500 font-medium mb-3 px-3">分析工具</p>
+        <nav class="space-y-1">
+          <a href="#" class="sidebar-item active flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-200">
+            <svg class="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            图片分析
+          </a>
+          <a href="#" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-300">
+            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+            </svg>
+            视频分析
+          </a>
+          <a href="#" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-300">
+            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+            </svg>
+            网页设计分析
+          </a>
+          <a href="#" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-300">
+            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+            </svg>
+            网站逆向分析
+          </a>
+          <a href="#" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-300">
+            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            文档分析
+          </a>
+        </nav>
+        
+        <p class="text-xs text-gray-500 font-medium mb-3 mt-6 px-3">输出工具</p>
+        <nav class="space-y-1">
+          <a href="#" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-300">
+            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+            提示词生成
+          </a>
+          <a href="#" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-300">
+            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+            </svg>
+            Tailwind 代码
+          </a>
+        </nav>
+        
+        <p class="text-xs text-gray-500 font-medium mb-3 mt-6 px-3">个人中心</p>
+        <nav class="space-y-1">
+          <a href="#" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-300">
+            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            历史记录
+          </a>
+          <a href="#" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-300">
+            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+            </svg>
+            我的风格
+          </a>
+          <a href="#" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-300">
+            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            设置
+          </a>
+        </nav>
+      </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="ml-60 flex-1 p-6">
+      
+      <!-- 上传区域 -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">上传内容开始分析</h2>
+        
+        <div class="upload-zone rounded-xl p-8 mb-4 cursor-pointer text-center">
+          <div class="flex flex-col items-center gap-3">
+            <div class="w-12 h-12 bg-violet-100 rounded-full flex items-center justify-center">
+              <svg class="w-6 h-6 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+              </svg>
+            </div>
+            <p class="text-gray-600 font-medium">拖放文件或点击上传</p>
+            <p class="text-gray-400 text-sm">图片 (JPG/PNG/WebP/GIF) · 视频 (MP4/MOV/WebM, ≤30秒) · 最大 50MB</p>
+          </div>
+        </div>
+        
+        <div class="flex gap-3">
+          <button class="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-50 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition border border-gray-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+            </svg>
+            输入网址
+          </button>
+          <button class="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-50 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition border border-gray-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+            </svg>
+            视频链接
+          </button>
+          <button class="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-50 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition border border-gray-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            粘贴文本
+          </button>
+          <button class="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-violet-50 text-violet-600 rounded-lg text-sm hover:bg-violet-100 transition border border-violet-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+            隐私模式
+          </button>
+        </div>
+      </div>
+
+      <!-- 分析模式选择 -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">选择分析模式</h3>
+        <div class="grid grid-cols-3 gap-4">
+          <div class="mode-card selected border-2 rounded-xl p-5 cursor-pointer">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900">设计分析</h4>
+                <p class="text-xs text-gray-500">图片/网页截图</p>
+              </div>
+            </div>
+            <p class="text-sm text-gray-600">提取配色、布局、风格，生成提示词和代码</p>
+          </div>
+          
+          <div class="mode-card border-2 border-gray-200 rounded-xl p-5 cursor-pointer">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900">视频分析</h4>
+                <p class="text-xs text-gray-500">视频源文件/链接</p>
+              </div>
+            </div>
+            <p class="text-sm text-gray-600">分析视频风格、节奏、特效，生成复刻提示词</p>
+          </div>
+          
+          <div class="mode-card border-2 border-gray-200 rounded-xl p-5 cursor-pointer">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900">逆向分析</h4>
+                <p class="text-xs text-gray-500">仅限网址</p>
+              </div>
+            </div>
+            <p class="text-sm text-gray-600">分析网站功能、技术栈，生成需求文档</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 视频分析选项（当选中视频分析时显示） -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">视频分析选项</h3>
+        
+        <div class="grid grid-cols-2 gap-6 mb-6">
+          <!-- 输出目标 -->
+          <div>
+            <label class="text-sm font-medium text-gray-700 mb-3 block">输出目标</label>
+            <div class="space-y-2">
+              <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition">
+                <input type="radio" name="video-output" checked class="text-violet-600">
+                <div>
+                  <p class="text-sm font-medium text-gray-700">一键同风格提示词</p>
+                  <p class="text-xs text-gray-500">生成可用于复刻该视频风格的完整提示词</p>
+                </div>
+              </label>
+              <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition">
+                <input type="radio" name="video-output" class="text-violet-600">
+                <div>
+                  <p class="text-sm font-medium text-gray-700">调整建议</p>
+                  <p class="text-xs text-gray-500">分析可改进点，给出具体优化方案</p>
+                </div>
+              </label>
+              <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition">
+                <input type="radio" name="video-output" class="text-violet-600">
+                <div>
+                  <p class="text-sm font-medium text-gray-700">AI工具推荐</p>
+                  <p class="text-xs text-gray-500">推荐适合生成此类视频的AI工具和模型</p>
+                </div>
+              </label>
+            </div>
+          </div>
+          
+          <!-- 风格标签 -->
+          <div>
+            <label class="text-sm font-medium text-gray-700 mb-3 block">风格标签（可选）</label>
+            <div class="flex flex-wrap gap-2">
+              <button class="tag-btn px-3 py-1.5 border border-gray-300 rounded-full text-sm text-gray-600 hover:border-violet-400 hover:text-violet-600">电影感</button>
+              <button class="tag-btn px-3 py-1.5 border border-gray-300 rounded-full text-sm text-gray-600 hover:border-violet-400 hover:text-violet-600">Vlog</button>
+              <button class="tag-btn px-3 py-1.5 border border-gray-300 rounded-full text-sm text-gray-600 hover:border-violet-400 hover:text-violet-600">广告</button>
+              <button class="tag-btn px-3 py-1.5 border border-gray-300 rounded-full text-sm text-gray-600 hover:border-violet-400 hover:text-violet-600">产品展示</button>
+              <button class="tag-btn px-3 py-1.5 border border-gray-300 rounded-full text-sm text-gray-600 hover:border-violet-400 hover:text-violet-600">教程</button>
+              <button class="tag-btn px-3 py-1.5 border border-gray-300 rounded-full text-sm text-gray-600 hover:border-violet-400 hover:text-violet-600">短视频</button>
+              <button class="tag-btn px-3 py-1.5 border border-gray-300 rounded-full text-sm text-gray-600 hover:border-violet-400 hover:text-violet-600">动画</button>
+              <button class="tag-btn px-3 py-1.5 border border-gray-300 rounded-full text-sm text-gray-600 hover:border-violet-400 hover:text-violet-600">AE特效</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 输出设置 -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">输出设置</h3>
+        
+        <div class="grid grid-cols-3 gap-6">
+          <!-- 方案数量 -->
+          <div>
+            <label class="text-sm font-medium text-gray-700 mb-2 block">方案数量</label>
+            <div class="flex items-center gap-3">
+              <input type="range" min="2" max="6" value="2" class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+              <span class="text-sm font-medium text-violet-600 w-8">2个</span>
+            </div>
+          </div>
+          
+          <!-- 语言 -->
+          <div>
+            <label class="text-sm font-medium text-gray-700 mb-2 block">输出语言</label>
+            <select class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+              <option>中文</option>
+              <option>English</option>
+              <option>中英双语</option>
+            </select>
+          </div>
+          
+          <!-- 输出内容 -->
+          <div>
+            <label class="text-sm font-medium text-gray-700 mb-2 block">输出内容</label>
+            <div class="flex flex-wrap gap-2">
+              <label class="flex items-center gap-2 text-sm text-gray-600">
+                <input type="checkbox" checked class="rounded border-gray-300 text-violet-600">
+                提示词
+              </label>
+              <label class="flex items-center gap-2 text-sm text-gray-600">
+                <input type="checkbox" checked class="rounded border-gray-300 text-violet-600">
+                Tailwind代码
+              </label>
+              <label class="flex items-center gap-2 text-sm text-gray-600">
+                <input type="checkbox" class="rounded border-gray-300 text-violet-600">
+                工具推荐
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 快捷风格包 -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-900">风格偏好</h3>
+          <button class="text-sm text-violet-600 hover:text-violet-700">管理我的风格 →</button>
+        </div>
+        
+        <div class="grid grid-cols-6 gap-3">
+          <div class="border-2 border-violet-500 bg-violet-50 rounded-lg p-3 text-center cursor-pointer">
+            <div class="text-2xl mb-1">🎨</div>
+            <p class="text-xs font-medium text-gray-700">极简</p>
+          </div>
+          <div class="border border-gray-200 hover:border-violet-300 rounded-lg p-3 text-center cursor-pointer">
+            <div class="text-2xl mb-1">🌙</div>
+            <p class="text-xs font-medium text-gray-700">深色</p>
+          </div>
+          <div class="border border-gray-200 hover:border-violet-300 rounded-lg p-3 text-center cursor-pointer">
+            <div class="text-2xl mb-1">✨</div>
+            <p class="text-xs font-medium text-gray-700">科技</p>
+          </div>
+          <div class="border border-gray-200 hover:border-violet-300 rounded-lg p-3 text-center cursor-pointer">
+            <div class="text-2xl mb-1">🌸</div>
+            <p class="text-xs font-medium text-gray-700">柔美</p>
+          </div>
+          <div class="border border-gray-200 hover:border-violet-300 rounded-lg p-3 text-center cursor-pointer">
+            <div class="text-2xl mb-1">💼</div>
+            <p class="text-xs font-medium text-gray-700">商务</p>
+          </div>
+          <div class="border border-gray-200 hover:border-violet-300 rounded-lg p-3 text-center cursor-pointer">
+            <div class="text-2xl mb-1">🎬</div>
+            <p class="text-xs font-medium text-gray-700">电影</p>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+</body>
+</html>

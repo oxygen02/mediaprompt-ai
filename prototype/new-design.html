@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediaPrompt AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'DM Sans', -apple-system, 'PingFang SC', sans-serif; }
+    
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+    
+    .gradient-accent {
+      background: linear-gradient(135deg, #E8FF5A 0%, #B8E94A 100%);
+    }
+    
+    .glass {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(12px);
+    }
+  </style>
+</head>
+<body class="bg-[#0D0D0D] text-white min-h-screen">
+  
+  <!-- 左侧导航 -->
+  <aside class="fixed left-0 top-0 bottom-0 w-[72px] bg-[#161616] border-r border-[#2A2A2A] flex flex-col items-center py-6 z-50">
+    <div class="w-11 h-11 gradient-accent rounded-xl flex items-center justify-center text-black font-bold text-lg mb-8">M</div>
+    
+    <nav class="flex flex-col gap-2 flex-1">
+      <button class="w-11 h-11 rounded-xl bg-[#E8FF5A] text-black flex items-center justify-center" title="首页">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      </button>
+      <button class="w-11 h-11 rounded-xl text-gray-500 hover:bg-[#1F1F1F] hover:text-gray-300 flex items-center justify-center" title="历史">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </button>
+      <button class="w-11 h-11 rounded-xl text-gray-500 hover:bg-[#1F1F1F] hover:text-gray-300 flex items-center justify-center" title="收藏">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+      </button>
+    </nav>
+    
+    <button class="w-11 h-11 rounded-xl text-gray-500 hover:bg-[#1F1F1F] hover:text-gray-300 flex items-center justify-center" title="设置">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+    </button>
+  </aside>
+
+  <!-- 主内容 -->
+  <main class="ml-[72px]">
+    
+    <!-- 顶栏 -->
+    <header class="h-16 border-b border-[#2A2A2A] flex items-center justify-between px-8 bg-[#161616] sticky top-0 z-40">
+      <span class="text-sm text-gray-500">MediaPrompt</span>
+      <div class="flex items-center gap-4">
+        <!-- 语言切换 -->
+        <div class="flex bg-[#1F1F1F] rounded-lg p-1 gap-1">
+          <button class="px-3 py-1.5 text-sm rounded-md bg-[#0D0D0D] text-white">中文</button>
+          <button class="px-3 py-1.5 text-sm rounded-md text-gray-500 hover:text-gray-300">EN</button>
+        </div>
+        <!-- 次数 -->
+        <div class="flex items-center gap-2 bg-[#1F1F1F] px-4 py-2 rounded-full text-sm">
+          <span class="w-2 h-2 bg-[#E8FF5A] rounded-full"></span>
+          <span class="text-gray-400">今日 <span class="text-white font-medium">3</span> 次</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- 首页内容 -->
+    <div class="max-w-4xl mx-auto px-8 py-20">
+      
+      <!-- Hero -->
+      <div class="text-center mb-16">
+        <h1 class="text-5xl font-bold mb-4 leading-tight">
+          上传任意设计<br>
+          <span class="text-[#E8FF5A]">AI 帮你看懂、复刻</span>
+        </h1>
+        <p class="text-gray-500 text-lg">
+          图片 / 视频 / 网页 / 文档 → 提示词 + 代码 + 工具推荐
+        </p>
+      </div>
+
+      <!-- 模式选择 -->
+      <div class="flex gap-3 mb-6">
+        <button class="flex-1 py-3 px-4 rounded-xl bg-[#1F1F1F] border-2 border-[#E8FF5A] text-white font-medium flex items-center justify-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          图片分析
+        </button>
+        <button class="flex-1 py-3 px-4 rounded-xl bg-[#1F1F1F] border-2 border-transparent text-gray-400 font-medium flex items-center justify-center gap-2 hover:border-gray-700 hover:text-gray-300">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          视频分析
+        </button>
+        <button class="flex-1 py-3 px-4 rounded-xl bg-[#1F1F1F] border-2 border-transparent text-gray-400 font-medium flex items-center justify-center gap-2 hover:border-gray-700 hover:text-gray-300">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg>
+          网页逆向
+        </button>
+        <button class="flex-1 py-3 px-4 rounded-xl bg-[#1F1F1F] border-2 border-transparent text-gray-400 font-medium flex items-center justify-center gap-2 hover:border-gray-700 hover:text-gray-300">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          文档分析
+        </button>
+      </div>
+
+      <!-- 上传区 -->
+      <div class="border-2 border-dashed border-[#2A2A2A] rounded-2xl p-12 text-center cursor-pointer hover:border-[#E8FF5A] hover:bg-[#E8FF5A]/5 transition-all mb-6">
+        <div class="w-16 h-16 bg-[#1F1F1F] rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <svg class="w-7 h-7 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+        </div>
+        <p class="text-gray-300 font-medium mb-1">拖放文件或点击上传</p>
+        <p class="text-gray-600 text-sm">JPG/PNG/WebP/GIF/MP4/PDF/DOC · 最大 50MB</p>
+      </div>
+
+      <!-- 或 -->
+      <div class="flex items-center gap-4 mb-6">
+        <div class="flex-1 h-px bg-[#2A2A2A]"></div>
+        <span class="text-gray-600 text-sm">或</span>
+        <div class="flex-1 h-px bg-[#2A2A2A]"></div>
+      </div>
+
+      <!-- URL输入 -->
+      <div class="flex gap-3 mb-8">
+        <input type="text" placeholder="粘贴网页链接..." class="flex-1 bg-[#1F1F1F] border border-[#2A2A2A] rounded-xl px-5 py-4 text-white placeholder-gray-600 focus:outline-none focus:border-[#E8FF5A]">
+        <button class="px-8 py-4 gradient-accent text-black font-semibold rounded-xl hover:opacity-90 transition">开始分析</button>
+      </div>
+
+      <!-- 功能卡片 -->
+      <div class="grid grid-cols-3 gap-4 mt-16">
+        <div class="bg-[#1F1F1F] border border-[#2A2A2A] rounded-2xl p-6 hover:border-[#E8FF5A]/50 transition cursor-pointer">
+          <div class="w-10 h-10 bg-violet-500/20 rounded-xl flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
+          </div>
+          <h3 class="font-semibold mb-2">设计分析</h3>
+          <p class="text-gray-500 text-sm">提取配色、布局、字体，生成提示词和 Tailwind 代码</p>
+        </div>
+        <div class="bg-[#1F1F1F] border border-[#2A2A2A] rounded-2xl p-6 hover:border-[#E8FF5A]/50 transition cursor-pointer">
+          <div class="w-10 h-10 bg-pink-500/20 rounded-xl flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </div>
+          <h3 class="font-semibold mb-2">视频分析</h3>
+          <p class="text-gray-500 text-sm">分析风格、节奏、特效，推荐 AI 视频工具</p>
+        </div>
+        <div class="bg-[#1F1F1F] border border-[#2A2A2A] rounded-2xl p-6 hover:border-[#E8FF5A]/50 transition cursor-pointer">
+          <div class="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+          </div>
+          <h3 class="font-semibold mb-2">网站逆向</h3>
+          <p class="text-gray-500 text-sm">分析功能、技术栈、API，生成需求文档</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // 语言切换
+    document.querySelectorAll('.flex.bg-\\[\\#1F1F1F\\].rounded-lg button').forEach(btn => {
+      btn.addEventListener('click', function() {
+        this.parentElement.querySelectorAll('button').forEach(b => {
+          b.classList.remove('bg-[#0D0D0D]', 'text-white');
+          b.classList.add('text-gray-500');
+        });
+        this.classList.add('bg-[#0D0D0D]', 'text-white');
+        this.classList.remove('text-gray-500');
+      });
+    });
+
+    // 模式切换
+    document.querySelectorAll('.flex.gap-3.mb-6 button').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.flex.gap-3.mb-6 button').forEach(b => {
+          b.classList.remove('border-[#E8FF5A]', 'text-white');
+          b.classList.add('border-transparent', 'text-gray-400');
+        });
+        this.classList.add('border-[#E8FF5A]', 'text-white');
+        this.classList.remove('border-transparent', 'text-gray-400');
+      });
+    });
+  </script>
+</body>
+</html>

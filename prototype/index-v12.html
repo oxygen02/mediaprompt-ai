@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediaPrompt AI - 内容反向工程工具箱</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+    
+    body {
+      background: #0f0f1a;
+      min-height: 100vh;
+    }
+    
+    .sidebar {
+      background: #161622;
+      border-right: 1px solid #2a2a3e;
+    }
+    
+    .nav-item {
+      transition: all 0.15s ease;
+    }
+    .nav-item:hover {
+      background: #1e1e2e;
+    }
+    .nav-item.active {
+      background: #252538;
+    }
+    
+    .upload-zone {
+      background: #1e1e2e;
+      border: 2px dashed #3a3a4e;
+      transition: all 0.2s ease;
+    }
+    .upload-zone:hover {
+      border-color: #6366f1;
+      background: #252538;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    }
+    
+    .btn-secondary {
+      background: #252538;
+      border: 1px solid #3a3a4e;
+    }
+    .btn-secondary:hover {
+      background: #2a2a3e;
+    }
+    
+    .checkbox-item {
+      background: #1e1e2e;
+      border: 1px solid #2a2a3e;
+      transition: all 0.15s ease;
+    }
+    .checkbox-item:hover {
+      border-color: #3a3a4e;
+    }
+    .checkbox-item.checked {
+      border-color: #6366f1;
+      background: rgba(99, 102, 241, 0.1);
+    }
+    
+    .output-card {
+      background: #1e1e2e;
+      border: 1px solid #2a2a3e;
+    }
+    
+    /* 反转钟表动画 */
+    @keyframes rotateReverse {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(-360deg); }
+    }
+    .clock-reverse {
+      animation: rotateReverse 10s linear infinite;
+    }
+    
+    .hidden { display: none; }
+  </style>
+</head>
+<body class="bg-[#0f0f1a] text-white">
+  
+  <div class="flex min-h-screen">
+    
+    <!-- 左侧导航栏 -->
+    <aside class="sidebar w-52 flex-shrink-0 flex flex-col">
+      
+      <!-- Logo -->
+      <div class="p-4 border-b border-gray-800">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+            <span class="text-white font-bold text-sm">M</span>
+          </div>
+          <span class="font-semibold text-white">MediaPrompt</span>
+        </div>
+      </div>
+      
+      <!-- 导航菜单 -->
+      <nav class="flex-1 p-3">
+        <div class="text-xs text-gray-500 px-3 py-2">分析工具</div>
+        <a href="#" class="nav-item active flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-white">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          文档分析
+        </a>
+        <a href="#" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+          图片分析
+        </a>
+        <a href="#" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+          </svg>
+          视频分析
+        </a>
+        <a href="#" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/>
+          </svg>
+          网页分析
+        </a>
+        
+        <div class="text-xs text-gray-500 px-3 py-2 mt-4">个人中心</div>
+        <a href="#" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          历史记录
+        </a>
+        <a href="#" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          设置
+        </a>
+      </nav>
+      
+      <!-- 底部用户信息 -->
+      <div class="p-4 border-t border-gray-800">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
+            <span class="text-xs text-gray-400">U</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm text-white truncate">用户名</p>
+            <p class="text-xs text-gray-500">免费用户</p>
+          </div>
+        </div>
+      </div>
+      
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="flex-1 overflow-auto">
+      
+      <!-- 顶部导航栏 -->
+      <nav class="h-14 border-b border-gray-800 flex items-center justify-between px-6 bg-[#161622] sticky top-0 z-10">
+        <div class="flex items-center gap-6">
+          <a href="#" class="text-sm text-white font-medium">首页</a>
+          <a href="#" class="text-sm text-gray-500">定价</a>
+          <a href="#" class="text-sm text-gray-500">关于</a>
+        </div>
+        <div class="flex items-center gap-3">
+          <button class="text-sm text-gray-400 hover:text-white">登录</button>
+          <button class="btn-primary px-4 py-1.5 rounded text-sm text-white">注册</button>
+        </div>
+      </nav>
+
+      <div class="p-8 max-w-5xl mx-auto">
+        
+        <!-- Slogan 区 -->
+        <div class="text-center mb-8">
+          <div class="flex items-center justify-center gap-3 mb-4">
+            <div class="clock-reverse w-12 h-12 text-violet-400">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 6v6l4 2"/>
+                <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+              </svg>
+            </div>
+            <h1 class="text-3xl font-bold text-white">最好的学习从模仿开始</h1>
+          </div>
+          <p class="text-gray-400 text-base">上传你喜欢的内容，提炼有效提示词，让美好可以复刻迭代</p>
+        </div>
+        
+        <!-- 类别选择 -->
+        <div class="flex gap-3 mb-6 justify-center">
+          <button class="category-btn px-5 py-2 rounded-lg text-sm font-medium bg-[#252538] text-white border border-violet-500" data-type="document">📄 文档</button>
+          <button class="category-btn px-5 py-2 rounded-lg text-sm text-gray-400 bg-[#1e1e2e] hover:bg-[#252538]" data-type="image">🖼️ 图片</button>
+          <button class="category-btn px-5 py-2 rounded-lg text-sm text-gray-400 bg-[#1e1e2e] hover:bg-[#252538]" data-type="video">🎬 视频</button>
+          <button class="category-btn px-5 py-2 rounded-lg text-sm text-gray-400 bg-[#1e1e2e] hover:bg-[#252538]" data-type="website">🌐 网页</button>
+        </div>
+        
+        <!-- 文件拖拽区 -->
+        <div class="upload-zone rounded-xl p-8 text-center cursor-pointer mb-4" id="uploadZone">
+          <div class="w-14 h-14 rounded-full bg-[#252538] flex items-center justify-center mx-auto mb-3">
+            <svg class="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+          </div>
+          <p class="text-gray-300 mb-1">拖放文件到此处</p>
+          <p class="text-gray-500 text-sm" id="fileHint">支持 Word/PDF/TXT/Markdown</p>
+        </div>
+        
+        <!-- 文件上传区 + 开始分析按钮（并列） -->
+        <div class="flex gap-3 mb-8">
+          <input type="file" id="fileInput" class="hidden">
+          <button onclick="document.getElementById('fileInput').click()" class="btn-secondary flex-1 py-3 rounded-xl text-sm text-gray-300 font-medium">
+            📁 选择文件上传
+          </button>
+          <button class="btn-primary px-8 py-3 rounded-xl text-white font-medium" id="analyzeBtn">
+            🔍 开始分析提炼
+          </button>
+        </div>
+        
+        <!-- 输出结果选择区域 -->
+        <div class="mb-8">
+          <h3 class="text-sm font-medium text-gray-300 mb-3">希望输出的内容（可多选）</h3>
+          
+          <!-- 文档选项 -->
+          <div id="documentOptions" class="grid grid-cols-4 gap-3">
+            <label class="checkbox-item checked rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" checked class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">提示词</span>
+            </label>
+            <label class="checkbox-item rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">大纲梗概</span>
+            </label>
+            <label class="checkbox-item rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">结构分析</span>
+            </label>
+            <label class="checkbox-item rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">人物关系</span>
+            </label>
+            <label class="checkbox-item rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">关键词提取</span>
+            </label>
+            <label class="checkbox-item rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">风格分析</span>
+            </label>
+            <label class="checkbox-item rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">情感基调</span>
+            </label>
+            <label class="checkbox-item rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">改编方案</span>
+            </label>
+          </div>
+          
+          <!-- 图片选项 -->
+          <div id="imageOptions" class="hidden grid grid-cols-4 gap-3">
+            <label class="checkbox-item checked rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" checked class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">提示词</span>
+            </label>
+            <label class="checkbox-item rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">风格描述</span>
+            </label>
+            <label class="checkbox-item rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">配色方案</span>
+            </label>
+            <label class="checkbox-item rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">构图分析</span>
+            </label>
+            <label class="checkbox-item rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">推荐工具</span>
+            </label>
+            <label class="checkbox-item rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">参数建议</span>
+            </label>
+            <label class="checkbox-item rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">相似参考</span>
+            </label>
+          </div>
+          
+          <!-- 视频选项 -->
+          <div id="videoOptions" class="hidden grid grid-cols-4 gap-3">
+            <label class="checkbox-item checked rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" checked class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">提示词</span>
+            </label>
+            <label class="checkbox-item rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">关键词</span>
+            </label>
+            <label class="checkbox-item rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">改编方案</span>
+            </label>
+            <label class="checkbox-item rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">分镜脚本</span>
+            </label>
+            <label class="checkbox-item rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">节奏分析</span>
+            </label>
+            <label class="checkbox-item rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">特效识别</span>
+            </label>
+            <label class="checkbox-item rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">发散方案</span>
+            </label>
+            <label class="checkbox-item rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">推荐工具</span>
+            </label>
+          </div>
+          
+          <!-- 网页选项 -->
+          <div id="websiteOptions" class="hidden grid grid-cols-4 gap-3">
+            <label class="checkbox-item checked rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" checked class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">提示词</span>
+            </label>
+            <label class="checkbox-item rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">内容分析</span>
+            </label>
+            <label class="checkbox-item rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">功能列表</span>
+            </label>
+            <label class="checkbox-item rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">布局结构</span>
+            </label>
+            <label class="checkbox-item rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">风格描述</span>
+            </label>
+            <label class="checkbox-item rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">字体配色</span>
+            </label>
+            <label class="checkbox-item rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">MVP文档</span>
+            </label>
+            <label class="checkbox-item rounded-lg p-3 cursor-pointer flex items-center gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded bg-gray-700 border-gray-600 text-violet-500">
+              <span class="text-sm text-gray-300">技术栈推测</span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- 用户编辑区 + 模拟输出 + 模型选择 -->
+        <div class="mb-8">
+          <h3 class="text-sm font-medium text-gray-300 mb-3">编辑修改（可选）</h3>
+          <textarea class="w-full h-32 bg-[#1e1e2e] border border-[#2a2a3e] rounded-xl p-4 text-sm text-gray-300 placeholder-gray-500 focus:outline-none focus:border-violet-500" placeholder="在这里修改提示词或添加你的想法..."></textarea>
+          
+          <div class="flex gap-3 mt-4">
+            <button class="btn-secondary flex-1 py-3 rounded-xl text-sm text-gray-300 font-medium">
+              🎲 模拟输出预览
+            </button>
+            
+            <!-- 模型选择 -->
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-gray-500">模型：</span>
+              <select class="bg-[#252538] border border-[#3a3a4e] rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none">
+                <option>GPT-4</option>
+                <option>Claude 3.5</option>
+                <option>Gemini Pro</option>
+                <option>文心一言</option>
+                <option>通义千问</option>
+              </select>
+            </div>
+            
+            <!-- 生成数量（图片时显示） -->
+            <div id="imageCount" class="hidden items-center gap-2">
+              <span class="text-sm text-gray-500">生成数量：</span>
+              <select class="bg-[#252538] border border-[#3a3a4e] rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none">
+                <option>1张</option>
+                <option>2张</option>
+                <option>4张</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 输出结果预览区 -->
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-medium text-gray-300">输出结果</h3>
+            <button class="text-sm text-violet-400 hover:text-violet-300">📋 一键复制</button>
+          </div>
+          
+          <div class="output-card rounded-xl p-5">
+            <p class="text-gray-400 text-sm mb-4">分析结果将显示在这里...</p>
+            
+            <!-- 图片预览示例（图片模式时显示） -->
+            <div id="imagePreview" class="hidden grid grid-cols-2 gap-4">
+              <div class="aspect-square bg-[#252538] rounded-lg flex items-center justify-center">
+                <span class="text-gray-500 text-sm">图片 1</span>
+              </div>
+              <div class="aspect-square bg-[#252538] rounded-lg flex items-center justify-center">
+                <span class="text-gray-500 text-sm">图片 2</span>
+              </div>
+            </div>
+            
+            <!-- 文本预览 -->
+            <div id="textPreview" class="text-gray-300 text-sm leading-relaxed">
+              <p class="mb-3"><strong>提示词：</strong></p>
+              <p class="text-gray-400 mb-4">等待分析...</p>
+              <p class="mb-3"><strong>关键词：</strong></p>
+              <p class="text-gray-400">等待分析...</p>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+      
+    </main>
+    
+  </div>
+
+  <script>
+    // 类别切换
+    const categoryBtns = document.querySelectorAll('.category-btn');
+    const optionGroups = {
+      document: 'documentOptions',
+      image: 'imageOptions',
+      video: 'videoOptions',
+      website: 'websiteOptions'
+    };
+    const fileHints = {
+      document: '支持 Word/PDF/TXT/Markdown',
+      image: '支持 JPG/PNG/WebP/GIF',
+      video: '支持 MP4/MOV，≤30秒',
+      website: '支持 URL/网页截图'
+    };
+    
+    categoryBtns.forEach(btn => {
+      btn.addEventListener('click', function() {
+        categoryBtns.forEach(b => {
+          b.classList.remove('bg-[#252538]', 'text-white', 'border', 'border-violet-500');
+          b.classList.add('bg-[#1e1e2e]', 'text-gray-400');
+        });
+        this.classList.remove('bg-[#1e1e2e]', 'text-gray-400');
+        this.classList.add('bg-[#252538]', 'text-white', 'border', 'border-violet-500');
+        
+        const type = this.dataset.type;
+        
+        // 切换选项组
+        Object.values(optionGroups).forEach(id => {
+          document.getElementById(id).classList.add('hidden');
+        });
+        document.getElementById(optionGroups[type]).classList.remove('hidden');
+        
+        // 更新文件提示
+        document.getElementById('fileHint').textContent = fileHints[type];
+        
+        // 图片模式显示生成数量
+        if (type === 'image') {
+          document.getElementById('imageCount').classList.remove('hidden');
+          document.getElementById('imageCount').classList.add('flex');
+          document.getElementById('imagePreview').classList.remove('hidden');
+          document.getElementById('textPreview').classList.add('hidden');
+        } else {
+          document.getElementById('imageCount').classList.add('hidden');
+          document.getElementById('imageCount').classList.remove('flex');
+          document.getElementById('imagePreview').classList.add('hidden');
+          document.getElementById('textPreview').classList.remove('hidden');
+        }
+      });
+    });
+    
+    // 复选框状态
+    document.querySelectorAll('.checkbox-item').forEach(item => {
+      item.addEventListener('click', function() {
+        const checkbox = this.querySelector('input[type="checkbox"]');
+        checkbox.checked = !checkbox.checked;
+        this.classList.toggle('checked', checkbox.checked);
+      });
+    });
+  </script>
+
+</body>
+</html>

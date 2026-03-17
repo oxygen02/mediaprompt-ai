@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediaPrompt AI - 定价</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+    
+    body {
+      background: #ffffff;
+      min-height: 100vh;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    }
+    
+    .plan-card {
+      transition: all 0.2s ease;
+    }
+    .plan-card:hover {
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    
+    .plan-card.popular {
+      border: 2px solid #6366f1;
+    }
+  </style>
+</head>
+<body class="bg-white">
+  
+  <!-- 顶部导航 -->
+  <nav class="fixed top-0 left-0 right-0 bg-white z-50">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+          <span class="text-white font-bold text-sm">M</span>
+        </div>
+        <span class="font-semibold text-gray-900">MediaPrompt</span>
+      </div>
+      <div>
+        <a href="index-v8.html" class="btn-primary px-5 py-2.5 rounded-lg text-sm text-white font-medium">
+          免费开始
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 主内容区 -->
+  <main class="pt-32 pb-20">
+    <div class="max-w-6xl mx-auto px-6">
+      
+      <!-- 标题 -->
+      <div class="text-center mb-12">
+        <h1 class="text-3xl font-bold text-gray-900 mb-3">
+          按你的需求选择方案
+        </h1>
+        <p class="text-gray-500">
+          所有方案都包含四种分析模式：文字、图片、视频、网页
+        </p>
+      </div>
+      
+      <!-- 定价卡片 - 4列 -->
+      <div class="grid md:grid-cols-4 gap-6 mb-16">
+        
+        <!-- Free -->
+        <div class="plan-card bg-white rounded-2xl border border-gray-200 p-6">
+          <div class="mb-4">
+            <h3 class="font-semibold text-gray-900 mb-1">免费版</h3>
+            <p class="text-gray-500 text-sm">Free Forever</p>
+          </div>
+          <div class="mb-6">
+            <span class="text-4xl font-bold text-gray-900">¥0</span>
+          </div>
+          <div class="space-y-3 text-sm text-gray-600 mb-6">
+            <div class="flex items-center gap-2">
+              <span class="text-violet-500">✓</span>
+              <span>每天 3 次分析</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-violet-500">✓</span>
+              <span>基础提示词</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-violet-500">✓</span>
+              <span>无需绑定支付</span>
+            </div>
+            <div class="flex items-center gap-2 text-gray-400">
+              <span class="text-gray-300">✗</span>
+              <span>无浮层标注</span>
+            </div>
+          </div>
+          <button class="w-full py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50">
+            免费开始
+          </button>
+        </div>
+        
+        <!-- Starter -->
+        <div class="plan-card bg-white rounded-2xl border border-gray-200 p-6">
+          <div class="mb-4">
+            <h3 class="font-semibold text-gray-900 mb-1">入门版</h3>
+            <p class="text-gray-500 text-sm">Starter</p>
+          </div>
+          <div class="mb-6">
+            <span class="text-4xl font-bold text-gray-900">¥39</span>
+            <span class="text-gray-500">/月</span>
+          </div>
+          <div class="space-y-3 text-sm text-gray-600 mb-6">
+            <div class="flex items-center gap-2">
+              <span class="text-violet-500">✓</span>
+              <span>每天 20 次分析</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-violet-500">✓</span>
+              <span>完整提示词输出</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-violet-500">✓</span>
+              <span>30 天历史记录</span>
+            </div>
+            <div class="flex items-center gap-2 text-gray-400">
+              <span class="text-gray-300">✗</span>
+              <span>无浮层标注</span>
+            </div>
+          </div>
+          <button class="w-full py-2.5 btn-primary rounded-lg text-white font-medium">
+            选择方案
+          </button>
+        </div>
+        
+        <!-- Pro - 推荐 -->
+        <div class="plan-card popular bg-white rounded-2xl p-6 relative">
+          <div class="absolute -top-3 left-1/2 -translate-x-1/2">
+            <span class="bg-gradient-to-r from-violet-500 to-purple-600 text-white text-xs px-3 py-1 rounded-full">
+              推荐
+            </span>
+          </div>
+          <div class="mb-4">
+            <h3 class="font-semibold text-gray-900 mb-1">专业版</h3>
+            <p class="text-gray-500 text-sm">Pro</p>
+          </div>
+          <div class="mb-6">
+            <span class="text-4xl font-bold text-gray-900">¥99</span>
+            <span class="text-gray-500">/月</span>
+          </div>
+          <div class="space-y-3 text-sm text-gray-600 mb-6">
+            <div class="flex items-center gap-2">
+              <span class="text-violet-500">✓</span>
+              <span>每天 100 次分析</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-violet-500">✓</span>
+              <span>完整提示词 + 代码</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-violet-500">✓</span>
+              <span>网页浮层标注</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-violet-500">✓</span>
+              <span>无限历史记录</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-violet-500">✓</span>
+              <span>优先客服支持</span>
+            </div>
+          </div>
+          <button class="w-full py-2.5 btn-primary rounded-lg text-white font-medium">
+            选择方案
+          </button>
+        </div>
+        
+        <!-- Enterprise -->
+        <div class="plan-card bg-white rounded-2xl border border-gray-200 p-6">
+          <div class="mb-4">
+            <h3 class="font-semibold text-gray-900 mb-1">企业版</h3>
+            <p class="text-gray-500 text-sm">Enterprise</p>
+          </div>
+          <div class="mb-6">
+            <span class="text-4xl font-bold text-gray-900">¥399</span>
+            <span class="text-gray-500">/月</span>
+          </div>
+          <div class="space-y-3 text-sm text-gray-600 mb-6">
+            <div class="flex items-center gap-2">
+              <span class="text-violet-500">✓</span>
+              <span>无限次分析</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-violet-500">✓</span>
+              <span>API 接口调用</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-violet-500">✓</span>
+              <span>团队协作功能</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-violet-500">✓</span>
+              <span>专属客服支持</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-violet-500">✓</span>
+              <span>自定义部署</span>
+            </div>
+          </div>
+          <button class="w-full py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50">
+            联系销售
+          </button>
+        </div>
+        
+      </div>
+      
+      <!-- 底部说明 -->
+      <div class="text-center text-gray-500 text-sm">
+        <p>需要帮助选择方案？查看我们的 <a href="#" class="text-violet-600 hover:underline">常见问题</a> 或联系 <a href="#" class="text-violet-600 hover:underline">support@mediaprompt.ai</a></p>
+      </div>
+      
+    </div>
+  </main>
+
+  <!-- 底部 -->
+  <footer class="py-8 border-t border-gray-100">
+    <div class="max-w-6xl mx-auto px-6 flex items-center justify-between text-sm text-gray-400">
+      <span>© 2026 MediaPrompt AI</span>
+      <div class="flex gap-6">
+        <a href="#" class="hover:text-gray-600">隐私</a>
+        <a href="#" class="hover:text-gray-600">条款</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
