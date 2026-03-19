@@ -73,10 +73,6 @@ export default function Home() {
     setStatus('waiting');
   }, []);
   
-  // 切换生成模型时清空结果
-    setCreativeResult('');
-  }, []);
-  
   // 历史记录 - 保存每个类别的内容
   const [history, setHistory] = useState<{
     [key in ContentType]?: {
