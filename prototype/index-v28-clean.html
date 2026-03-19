@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediaPrompt AI - Content Reverse Engineering Toolkit</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+    body { background: #f5f5f7; min-height: 100vh; }
+    .sidebar { background: #ffffff; border-right: 1px solid #e5e5e5; position: fixed; top: 0; left: 0; height: 100vh; z-index: 20; }
+    .main-content { margin-left: 208px; min-height: 100vh; }
+    .nav-item { transition: all 0.15s ease; }
+    .nav-item:hover { background: #f5f5f7; }
+    .nav-item.active { background: #e8e8ed; }
+    .upload-zone { background: #ffffff; border: 2px dashed #d1d1d6; transition: all 0.2s ease; }
+    .upload-zone:hover { border-color: #52525b; background: #fafafa; }
+    .upload-zone.dragover { border-color: #52525b; background: #f0f0f0; }
+    .btn-primary { background: linear-gradient(135deg, #52525b 0%, #3f3f46 50%, #52525b 100%); background-size: 200% 200%; animation: gradientShift 3s ease infinite; }
+    @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    .btn-loading { background: #52525b; animation: pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+    .btn-secondary { background: #ffffff; border: 1px solid #d1d1d6; }
+    .btn-secondary:hover { background: #f5f5f7; }
+    .output-card { background: #ffffff; border: 1px solid #e5e5e5; }
+    .lang-btn { transition: all 0.15s ease; }
+    .lang-btn.active { background: #52525b; color: white; }
+    .moon-container { position: relative; width: 32px; height: 32px; }
+    .moon-base { width: 32px; height: 32px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #e4e4e7 0%, #d4d4d8 25%, #a1a1aa 55%, #71717a 80%, #52525b 100%); position: relative; overflow: hidden; animation: moonRotate 20s linear infinite; }
+    @keyframes moonRotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .moon-base::before { content: ''; position: absolute; top: 3px; left: 4px; width: 5px; height: 5px; background: rgba(0,0,0,0.12); border-radius: 50%; box-shadow: 16px 2px 0 -1px rgba(0,0,0,0.08), 20px 10px 0 -2px rgba(0,0,0,0.15), 7px 18px 0 1px rgba(0,0,0,0.1), 18px 20px 0 -1px rgba(0,0,0,0.12); }
+    .moon-shadow { position: absolute; top: 0; left: 0; width: 32px; height: 32px; border-radius: 50%; pointer-events: none; animation: lunarEclipseReal 8s ease-in-out infinite; }
+    @keyframes lunarEclipseReal { 0% { box-shadow: inset 0 0 0 0 rgba(15,15,26,0); } 25% { box-shadow: inset 8px 0 0 0 rgba(15,15,26,0.7); } 50% { box-shadow: inset 18px 0 0 0 rgba(15,15,26,0.95); } 75% { box-shadow: inset 8px 0 0 0 rgba(15,15,26,0.7); } 100% { box-shadow: inset 0 0 0 0 rgba(15,15,26,0); } }
+    .fixed-header { position: fixed; top: 56px; left: 208px; right: 0; z-index: 25; background: #f5f5f7; padding: 12px 24px; }
+    .moon-icon { width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #f5f5f5 0%, #e5e5e5 40%, #d4d4d4 70%, #a3a3a3 100%); position: relative; flex-shrink: 0; }
+    .moon-95 { box-shadow: inset 14px 0 0 0 rgba(20,20,25,0.9); }
+    .moon-70 { box-shadow: inset 11px 0 0 0 rgba(20,20,25,0.9); }
+    .moon-40 { box-shadow: inset 6px 0 0 0 rgba(20,20,25,0.9); }
+    .moon-full { box-shadow: inset 2px 0 0 0 rgba(20,20,25,0.9); }
+    .prompt-block { background: #fafafa; border-left: 3px solid #52525b; padding: 8px 12px; margin-bottom: 8px; border-radius: 0 6px 6px 0; }
+    .prompt-label { font-weight: 600; color: #52525b; font-size: 12px; margin-bottom: 2px; }
+    .prompt-content { color: #4b5563; font-size: 12px; line-height: 1.5; }
+    .prompt-block.style { border-left-color: #ec4899; }
+    .prompt-block.style .prompt-label { color: #ec4899; }
+    .prompt-block.light { border-left-color: #f59e0b; }
+    .prompt-block.light .prompt-label { color: #f59e0b; }
+    .prompt-block.subject { border-left-color: #3b82f6; }
+    .prompt-block.subject .prompt-label { color: #3b82f6; }
+    .prompt-block.camera { border-left-color: #10b981; }
+    .prompt-block.camera .prompt-label { color: #10b981; }
+    .prompt-block.detail { border-left-color: #8b5cf6; }
+    .prompt-block.detail .prompt-label { color: #8b5cf6; }
+    .prompt-block.storyboard { border-left-color: #06b6d4; }
+    .prompt-block.storyboard .prompt-label { color: #06b6d4; }
+    .prompt-block.final { border-left-color: #52525b; background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); }
+    .prompt-block.final .prompt-label { color: #92400e; }
+    
+    /* 流式输出打字光标 */
+    .typing-cursor { display: inline-block; width: 2px; height: 14px; background: #52525b; animation: cursorBlink 0.6s infinite; vertical-align: text-bottom; margin-left: 1px; }
+    @keyframes cursorBlink { 0%, 45% { opacity: 1; } 50%, 100% { opacity: 0; } }
+    
+    /* AI标题心跳呼吸动画 */
+    .ai-title-breathing { animation: breathe 2s ease-in-out infinite; }
+    @keyframes breathe { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.02); } }
+    .output-scroll { max-height: 500px; overflow-y: auto; }
+    .output-scroll::-webkit-scrollbar { width: 6px; }
+    .output-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+    .output-scroll::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+    .logo-bg { background: linear-gradient(135deg, #52525b 0%, #3f3f46 100%); }
+    .option-tag { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 8px; font-size: 12px; color: #9ca3af; background: #fafafa; border: 1px solid #e5e7eb; cursor: pointer; transition: all 0.15s ease; white-space: nowrap; }
+    .option-tag:hover { color: #6b7280; border-color: #d1d5db; }
+    .option-tag.selected { color: #374151; font-weight: 500; background: #f3f4f6; border-color: #9ca3af; }
+    .option-tag .dot { width: 10px; height: 10px; border-radius: 50%; background: transparent; border: 1.5px solid #d1d5db; transition: all 0.15s ease; flex-shrink: 0; }
+    .option-tag.selected .dot { background: #52525b; border-color: #52525b; }
+    .error-message { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 12px; border-radius: 8px; margin-bottom: 16px; }
+    .success-message { background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a; padding: 12px; border-radius: 8px; margin-bottom: 16px; }
+    
+    /* AI分析过程展示 */
+    .ai-analysis-panel { background: #ffffff; border: 1px solid #e5e5e5; border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+    .ai-panel-header { background: #fafafa; border-bottom: 1px solid #e5e5e5; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
+    .ai-panel-title { font-size: 14px; font-weight: 500; color: #374151; display: flex; align-items: center; gap: 8px; }
+    .ai-panel-title .icon { font-size: 16px; }
+    
+    /* 思考过程区域 */
+    .thinking-section { border-bottom: 1px solid #f0f0f0; }
+    .thinking-header { padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; background: #fafbfc; }
+    .thinking-header:hover { background: #f5f6f7; }
+    .thinking-left { display: flex; align-items: center; gap: 8px; }
+    .thinking-toggle { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; }
+    .thinking-toggle.expanded { transform: rotate(90deg); }
+    .thinking-label { font-size: 13px; color: #6b7280; font-weight: 500; }
+    .thinking-time { font-size: 12px; color: #9ca3af; }
+    .thinking-content { padding: 0 16px 12px 40px; display: none; }
+    .thinking-content.show { display: block; }
+    .thinking-step { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; font-size: 12px; color: #6b7280; }
+    .thinking-step:last-child { margin-bottom: 0; }
+    .thinking-step-dot { width: 5px; height: 5px; background: #d1d5db; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+    .thinking-step.active .thinking-step-dot { background: #6366f1; animation: dotPulse 1s infinite; }
+    .thinking-step.done .thinking-step-dot { background: #22c55e; }
+    @keyframes dotPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    
+    /* 分析结果区域 */
+    .analysis-results { padding: 16px; }
+    .result-placeholder { text-align: center; padding: 32px 20px; color: #9ca3af; font-size: 13px; }
+    
+    /* 流式输出 - 打字机效果 */
+    .streaming-text { display: inline; }
+    .typing-cursor { display: inline-block; width: 2px; height: 14px; background: #52525b; animation: cursorBlink 0.6s infinite; vertical-align: text-bottom; margin-left: 1px; }
+    @keyframes cursorBlink { 0%, 45% { opacity: 1; } 50%, 100% { opacity: 0; } }
+    
+    /* 结果块逐个出现 */
+    .result-block-appear { animation: fadeInUp 0.4s ease-out; }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body class="bg-[#f5f5f7] text-gray-800">
+  
+  <!-- 左侧固定导航栏 -->
+  <aside class="sidebar w-52 flex-shrink-0 flex flex-col">
+    <div class="h-14 px-4 border-b border-gray-200 flex items-center">
+      <div class="w-8 h-8 rounded-lg logo-bg flex items-center justify-center"><span class="text-white font-bold text-sm">M</span></div>
+      <span class="font-semibold text-gray-800 ml-2">MediaPrompt</span>
+    </div>
+    <nav class="flex-1 p-3 overflow-y-auto">
+      <div class="text-xs text-gray-400 px-3 py-2">分析工具</div>
+      <a href="#" class="nav-item active flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-700"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><span>文档分析</span></a>
+      <a href="#" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg><span>图片分析</span></a>
+      <a href="#" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg><span>视频分析</span></a>
+      <a href="#" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg><span>网页分析</span></a>
+      <div class="text-xs text-gray-400 px-3 py-2 mt-4">案例展示</div>
+      <a href="cases.html#document" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg><span>文档案例</span></a>
+      <a href="cases.html#image" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg><span>图片案例</span></a>
+      <a href="cases.html#video" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg><span>视频案例</span></a>
+      <a href="cases.html#website" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg><span>网页案例</span></a>
+      <div class="text-xs text-gray-400 px-3 py-2 mt-4">个人中心</div>
+      <a href="#" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span>历史记录</span></a>
+      <a href="#" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg><span>设置</span></a>
+    </nav>
+    <div class="p-4 border-t border-gray-200">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center"><span class="text-xs text-gray-500">U</span></div>
+        <div class="flex-1 min-w-0"><p class="text-sm text-gray-700 truncate">用户名</p><p class="text-xs text-gray-400">免费用户</p></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 主内容区 -->
+  <div class="main-content">
+    <nav class="h-14 border-b border-gray-200 flex items-center justify-between px-8 bg-white sticky top-0 z-10">
+      <div class="flex items-center gap-6">
+        <a href="#" class="text-sm text-gray-800 font-medium">首页</a>
+        <a href="#" class="text-sm text-gray-500">定价</a>
+        <a href="#" class="text-sm text-gray-500">关于</a>
+      </div>
+      <div class="flex items-center gap-2.5">
+        <div class="moon-container"><div class="moon-base"></div><div class="moon-shadow"></div></div>
+        <h1 class="text-base font-semibold text-gray-800">最好的学习从模仿开始</h1>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+          <button class="lang-btn active px-3 py-1 rounded text-xs font-medium" data-lang="zh">中文</button>
+          <button class="lang-btn px-3 py-1 rounded text-xs text-gray-500" data-lang="en">EN</button>
+        </div>
+        <button class="text-sm text-gray-500 hover:text-gray-800">登录</button>
+        <button class="btn-primary px-4 py-1.5 rounded text-sm text-white">注册</button>
+      </div>
+    </nav>
+
+    <!-- 固定副标题区域 -->
+    <div class="fixed-header">
+      <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-3"><p class="text-gray-500 text-sm">上传你喜欢的内容，提炼有效提示词，让美好可以复刻迭代</p></div>
+        <div class="flex gap-2 justify-center">
+          <button class="category-btn px-4 py-1.5 rounded-lg text-sm font-medium bg-white text-gray-800 border border-gray-600 shadow-sm flex items-center gap-2" data-type="document"><span class="moon-icon moon-95"></span><span class="category-text">文档</span></button>
+          <button class="category-btn px-4 py-1.5 rounded-lg text-sm text-gray-500 bg-white border border-gray-200 flex items-center gap-2" data-type="image"><span class="moon-icon moon-70"></span><span class="category-text">图片</span></button>
+          <button class="category-btn px-4 py-1.5 rounded-lg text-sm text-gray-500 bg-white border border-gray-200 flex items-center gap-2" data-type="video"><span class="moon-icon moon-40"></span><span class="category-text">视频</span></button>
+          <button class="category-btn px-4 py-1.5 rounded-lg text-sm text-gray-500 bg-white border border-gray-200 flex items-center gap-2" data-type="website"><span class="moon-icon moon-full"></span><span class="category-text">网页</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-6 max-w-4xl mx-auto pt-28">
+      <div id="messageArea" class="hidden"></div>
+      
+      <!-- AI分析过程展示框 -->
+      <div class="ai-analysis-panel" id="aiAnalysisPanel">
+        <div class="ai-panel-header">
+          <div class="ai-panel-title" id="aiPanelTitle"><span>AI正在分析生成</span></div>
+          <div class="flex items-center gap-2">
+            <button class="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1" id="usePromptBtn" title="将提示词填入编辑框">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              <span>使用提示词</span>
+            </button>
+            <button class="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1" id="copyBtn">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              <span>复制</span>
+            </button>
+          </div>
+        </div>
+        
+        <!-- 思考过程 -->
+        <div class="thinking-section hidden" id="thinkingSection">
+          <div class="thinking-header" id="thinkingHeader">
+            <div class="thinking-left">
+              <div class="thinking-toggle" id="thinkingToggle">
+                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+              </div>
+              <span class="thinking-label">思考过程</span>
+            </div>
+            <span class="thinking-time" id="thinkingTime"></span>
+          </div>
+          <div class="thinking-content" id="thinkingContent">
+            <!-- 动态生成思考步骤 -->
+          </div>
+        </div>
+        
+        <!-- 分析结果 -->
+        <div class="analysis-results output-scroll" id="analysisResults">
+          <div class="result-placeholder" id="resultPlaceholder">上传内容后点击"开始分析提炼"，AI将展示完整的分析过程和最终提示词</div>
+          <div id="resultBlocks" class="hidden"></div>
+        </div>
+      </div>
+      
+      <!-- 文件拖拽区 -->
+      <div class="upload-zone rounded-xl p-6 text-center cursor-pointer mb-4" id="uploadZone">
+        <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-2">
+          <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+        </div>
+        <p class="text-gray-600 text-sm mb-1">拖放文件到此处</p>
+        <p class="text-gray-400 text-xs" id="fileHint">支持 Word/PDF/TXT/Markdown</p>
+      </div>
+      
+      <!-- 文件上传 + 模型选择 + 开始分析 -->
+      <div class="flex gap-3 mb-6 items-center flex-wrap">
+        <input type="file" id="fileInput" class="hidden">
+        <button onclick="document.getElementById('fileInput').click()" class="btn-secondary flex-1 py-2.5 rounded-xl text-sm text-gray-600 font-medium shadow-sm" id="uploadFileBtn">📁 选择文件上传</button>
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-gray-500">模型选择：</span>
+          <select id="modelSelect" class="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-gray-400 min-w-[160px]">
+            <option value="auto">🤖 自动选择</option>
+            <optgroup label="🇨🇳 国内模型" data-i18n="domestic">
+              <option value="tc-code-latest">腾讯云 Coding Plan</option>
+              <option value="qwen3-vl-plus">千问3VL-Plus (推荐)</option>
+              <option value="qwen3-vl-flash">千问3VL-Flash (快速)</option>
+              <option value="hunyuan-lite">混元 Lite</option>
+              <option value="hunyuan-pro">混元 Pro</option>
+              <option value="wenxin">文心一言</option>
+              <option value="doubao">豆包</option>
+            </optgroup>
+            <optgroup label="🌍 国际模型" data-i18n="international">
+              <option value="gpt-4o">GPT-4o</option>
+              <option value="gpt-4o-mini">GPT-4o Mini</option>
+              <option value="claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+              <option value="claude-3.5-haiku">Claude 3.5 Haiku</option>
+              <option value="gemini-pro">Gemini Pro</option>
+            </optgroup>
+          </select>
+        </div>
+        <button class="btn-primary px-6 py-2.5 rounded-xl text-white font-medium shadow-sm" id="analyzeBtn">🔍 开始分析提炼</button>
+      </div>
+      
+      <!-- 输出选项 -->
+      <div class="mb-5 flex items-center gap-3 flex-wrap">
+        <h3 class="text-sm font-medium text-gray-600" id="outputLabel">输出内容（可多选）</h3>
+        <div id="documentOptions" class="flex items-center gap-1 flex-wrap">
+          <span class="option-tag selected" data-value="prompt"><span class="dot"></span><span class="tag-text">提示词整合</span></span>
+          <span class="option-tag" data-value="outline"><span class="dot"></span><span class="tag-text">大纲梗概</span></span>
+          <span class="option-tag" data-value="structure"><span class="dot"></span><span class="tag-text">结构分析</span></span>
+          <span class="option-tag" data-value="keywords"><span class="dot"></span><span class="tag-text">关键词</span></span>
+        </div>
+        <div id="imageOptions" class="hidden flex items-center gap-1 flex-wrap">
+          <span class="option-tag selected" data-value="prompt"><span class="dot"></span><span class="tag-text">提示词整合</span></span>
+          <span class="option-tag" data-value="style"><span class="dot"></span><span class="tag-text">风格</span></span>
+          <span class="option-tag" data-value="colors"><span class="dot"></span><span class="tag-text">配色方案</span></span>
+          <span class="option-tag" data-value="params"><span class="dot"></span><span class="tag-text">参数建议</span></span>
+        </div>
+        <div id="videoOptions" class="hidden flex items-center gap-1 flex-wrap">
+          <span class="option-tag selected" data-value="prompt"><span class="dot"></span><span class="tag-text">提示词整合</span></span>
+          <span class="option-tag" data-value="scene"><span class="dot"></span><span class="tag-text">场景描述</span></span>
+          <span class="option-tag" data-value="style"><span class="dot"></span><span class="tag-text">风格</span></span>
+          <span class="option-tag" data-value="light"><span class="dot"></span><span class="tag-text">光影</span></span>
+          <span class="option-tag" data-value="subject"><span class="dot"></span><span class="tag-text">主体与动作</span></span>
+          <span class="option-tag" data-value="camera"><span class="dot"></span><span class="tag-text">镜头变化</span></span>
+          <span class="option-tag" data-value="storyboard"><span class="dot"></span><span class="tag-text">分镜说明</span></span>
+          <span class="option-tag" data-value="detail"><span class="dot"></span><span class="tag-text">细节分析</span></span>
+          <span class="option-tag" data-value="motion"><span class="dot"></span><span class="tag-text">动态细节</span></span>
+          <span class="option-tag" data-value="voiceover"><span class="dot"></span><span class="tag-text">🎙️ 同期AI配音</span></span>
+        </div>
+        <div id="websiteOptions" class="hidden flex items-center gap-1 flex-wrap">
+          <span class="option-tag selected" data-value="prompt"><span class="dot"></span><span class="tag-text">提示词整合</span></span>
+          <span class="option-tag" data-value="features"><span class="dot"></span><span class="tag-text">功能列表</span></span>
+          <span class="option-tag" data-value="mvp"><span class="dot"></span><span class="tag-text">MVP文档</span></span>
+          <span class="option-tag" data-value="tech"><span class="dot"></span><span class="tag-text">技术栈</span></span>
+        </div>
+      </div>
+      
+      <!-- 编辑自己的提示词 + 上传参考文件 -->
+      <div class="mb-5">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-medium text-gray-600">编辑自己的提示词</h3>
+          <span class="text-xs text-gray-400">用上方生成的提示词创作你的内容</span>
+        </div>
+        <textarea class="w-full h-24 bg-white border border-gray-200 rounded-xl p-3 text-sm text-gray-600 placeholder-gray-400 focus:outline-none focus:border-gray-400 mb-3" placeholder="在这里编辑提示词，或使用上方AI生成的提示词..." id="editorArea"></textarea>
+        
+        <!-- 上传参考文件区域 -->
+        <div class="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-4" id="refUploadArea">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-white border border-gray-200 flex items-center justify-center flex-shrink-0">
+              <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-gray-700 font-medium">上传参考文件（可选）</p>
+              <p class="text-xs text-gray-400 truncate" id="refFileHint">支持图片、文档等作为创作参考</p>
+            </div>
+            <input type="file" id="refFileInput" class="hidden">
+            <button onclick="document.getElementById('refFileInput').click()" class="btn-secondary px-4 py-2 rounded-lg text-sm text-gray-600">选择文件</button>
+          </div>
+          <!-- 已上传的参考文件 -->
+          <div class="hidden mt-3 flex items-center gap-2 p-2 bg-white rounded-lg border border-gray-200" id="refFileUploaded">
+            <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span class="text-sm text-gray-700 flex-1 truncate" id="refFileName">reference.jpg</span>
+            <button class="text-gray-400 hover:text-gray-600" id="refFileRemove">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 模拟输出 -->
+      <div class="flex gap-3 mb-6 items-center flex-wrap">
+        <button class="btn-secondary py-2.5 px-5 rounded-xl text-sm text-gray-600 font-medium shadow-sm flex items-center gap-2" id="previewBtn"><span class="moon-icon moon-70"></span>模拟输出预览</button>
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-gray-500">模型选择：</span>
+          <select id="modelSelect2" class="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-gray-400 min-w-[160px]">
+            <option value="auto">🤖 自动选择</option>
+            <optgroup label="🇨🇳 国内模型" data-i18n="domestic">
+              <option value="tc-code-latest">腾讯云 Coding Plan</option>
+              <option value="qwen3-vl-plus">千问3VL-Plus</option>
+              <option value="qwen3-vl-flash">千问3VL-Flash</option>
+              <option value="hunyuan-lite">混元 Lite</option>
+              <option value="hunyuan-pro">混元 Pro</option>
+              <option value="wenxin">文心一言</option>
+            </optgroup>
+            <optgroup label="🌍 国际模型" data-i18n="international">
+              <option value="gpt-4o">GPT-4o</option>
+              <option value="claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+              <option value="gemini-pro">Gemini Pro</option>
+            </optgroup>
+          </select>
+        </div>
+        
+        <!-- 视频尺寸选择（仅视频类别时显示） -->
+        <div id="videoAspectSection" class="hidden">
+          <div class="flex items-center gap-2">
+          <span class="text-sm text-gray-500">视频尺寸：</span>
+          <div class="flex items-center gap-1 bg-gray-50 rounded-lg p-1">
+            <button class="aspect-btn px-3 py-1.5 rounded text-xs font-medium bg-white text-gray-700 shadow-sm" data-aspect="16:9" title="横屏（推荐）">
+              <span class="flex items-center gap-1.5">
+                <span class="w-4 h-2.5 bg-gray-400 rounded-sm"></span>
+                16:9
+              </span>
+            </button>
+            <button class="aspect-btn px-3 py-1.5 rounded text-xs text-gray-500 hover:bg-white" data-aspect="9:16" title="竖屏（抖音/快手）">
+              <span class="flex items-center gap-1.5">
+                <span class="w-2.5 h-4 bg-gray-300 rounded-sm"></span>
+                9:16
+              </span>
+            </button>
+            <button class="aspect-btn px-3 py-1.5 rounded text-xs text-gray-500 hover:bg-white" data-aspect="4:3" title="传统比例">
+              <span class="flex items-center gap-1.5">
+                <span class="w-3.5 h-2.5 bg-gray-300 rounded-sm"></span>
+                4:3
+              </span>
+            </button>
+            <button class="aspect-btn px-3 py-1.5 rounded text-xs text-gray-500 hover:bg-white" data-aspect="1:1" title="正方形">
+              <span class="flex items-center gap-1.5">
+                <span class="w-3 h-3 bg-gray-300 rounded-sm"></span>
+                1:1
+              </span>
+            </button>
+            <button class="aspect-btn px-3 py-1.5 rounded text-xs text-gray-500 hover:bg-white" data-aspect="21:9" title="超宽屏">
+              <span class="flex items-center gap-1.5">
+                <span class="w-5 h-2 bg-gray-300 rounded-sm"></span>
+                21:9
+              </span>
+            </button>
+          </div>
+          </div>
+        </div>
+        
+        <div id="imageCount" class="hidden items-center gap-2">
+          <span class="text-sm text-gray-500">生成数量：</span>
+          <select class="bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600"><option>1张</option><option>2张</option><option>4张</option></select>
+        </div>
+      </div>
+      
+      <!-- 同期AI配音输入（仅视频类别时显示） -->
+      <div class="hidden mb-5" id="voiceoverSection">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-sm font-medium text-gray-600">🎙️ 同期AI配音</span>
+          <span class="text-xs text-gray-400">输入文字，AI生成视频时同步配音</span>
+        </div>
+        <input type="text" class="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-gray-400" placeholder="输入配音文字，支持多种风格：专业解说、故事叙述、情感表达、活力四射、温柔细腻、幽默风趣、严肃正式、轻松活泼、神秘悬疑、科技未来、复古怀旧、儿童友好等..." id="voiceoverText">
+      </div>
+      
+      <!-- 预览区 -->
+      <div class="mb-4">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-medium text-gray-600" id="previewTitle">预览</h3>
+          <!-- 社交媒体分享按钮 + 下载按钮 -->
+          <div class="flex items-center gap-2" id="shareSection">
+            <div class="flex items-center gap-2" id="chinaSocials">
+              <button class="w-10 h-10 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors" title="微信" onclick="shareTo('wechat')">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="#07C160"><path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 01.213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 00.167-.054l1.903-1.114a.864.864 0 01.717-.098 10.16 10.16 0 002.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.178A1.17 1.17 0 014.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.178 1.17 1.17 0 01-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 01.598.082l1.584.926a.272.272 0 00.14.045c.134 0 .24-.111.24-.247 0-.06-.023-.12-.038-.177l-.327-1.233a.582.582 0 01-.023-.156.49.49 0 01.201-.398C23.024 18.48 24 16.82 24 14.98c0-3.21-2.931-5.837-6.656-6.088V8.89zm-2.036 5.67a.914.914 0 11-.914-.914.914.914 0 01.914.914zm3.896 0a.914.914 0 11-.914-.914.914.914 0 01.914.914z"/></svg>
+              </button>
+              <button class="w-10 h-10 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors" title="抖音" onclick="shareTo('douyin')">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="#000000"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/></svg>
+              </button>
+              <button class="w-10 h-10 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors" title="小红书" onclick="shareTo('xiaohongshu')">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="#FF2442"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm3.5 13.5h-7v-1h7v1zm2-3.5h-9v-1h9v1zm1.5-3.5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+              </button>
+              <button class="w-10 h-10 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors" title="微博" onclick="shareTo('weibo')">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="#E6162D"><path d="M20.194 14.197c0 3.248-3.665 5.881-8.194 5.881-4.529 0-8.194-2.633-8.194-5.881 0-3.247 3.665-5.88 8.194-5.88 4.529 0 8.194 2.633 8.194 5.88zm-2.555-3.17c-.235-.737-.87-1.313-1.644-1.493-.5-.116-.917-.085-1.154-.332-.237-.247-.177-.632-.06-.955.182-.5.714-.832 1.234-.77.64.08 1.173.596 1.294 1.25.12.653-.06 1.293-.47 1.694-.41.4-1.023.606-1.6.606h-.134c-.47 0-.87-.22-1.136-.63-.267-.409-.267-.928-.062-1.368.328-.71 1.03-1.24 1.87-1.373.56-.088 1.103.03 1.544.36.44.33.766.82.766 1.44 0 .178-.03.356-.09.515.46.28.77.77.77 1.314 0 .887-.897 1.607-2.002 1.607h-.177c-1.16 0-2.107-.947-2.107-2.115 0-1.16.947-2.107 2.107-2.107h.177c.765 0 1.41.427 1.76 1.063.35.636.38 1.37.12 1.986l-.008.003zM10.418 13.8c-1.357-.08-2.445-1.16-2.365-2.524.08-1.364 1.16-2.444 2.524-2.365 1.364.08 2.445 1.16 2.365 2.524-.08 1.365-1.16 2.445-2.524 2.365z"/></svg>
+              </button>
+            </div>
+            <div class="flex items-center gap-2 hidden" id="intlSocials">
+              <button class="w-10 h-10 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors" title="X (Twitter)" onclick="shareTo('twitter')">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="#000000"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              </button>
+              <button class="w-10 h-10 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors" title="Facebook" onclick="shareTo('facebook')">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+              </button>
+              <button class="w-10 h-10 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors" title="LinkedIn" onclick="shareTo('linkedin')">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="#0A66C2"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+              </button>
+              <button class="w-10 h-10 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors" title="Instagram" onclick="shareTo('instagram')">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="#E4405F"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+              </button>
+            </div>
+            <div class="h-6 w-px bg-gray-300 mx-1"></div>
+            <button class="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white text-xs font-medium rounded-lg transition-colors" onclick="downloadResult()">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>下载</span>
+            </button>
+          </div>
+        </div>
+        <div class="output-card rounded-xl p-4 min-h-[120px] shadow-sm">
+          <div id="textPreview" class="text-gray-600 text-sm"><p class="text-gray-400 text-xs">预览结果将显示在这里...</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 社交媒体分享函数
+    function shareTo(platform) {
+      const content = document.getElementById('textPreview').innerText || document.getElementById('resultBlocks').innerText || '';
+      const shareUrl = encodeURIComponent(window.location.href);
+      const shareText = encodeURIComponent(content.substring(0, 100));
+      
+      let url = '';
+      switch(platform) {
+        case 'wechat':
+          alert('请使用微信扫一扫分享');
+          return;
+        case 'weibo':
+          url = `https://service.weibo.com/share/share.php?url=${shareUrl}&title=${shareText}`;
+          break;
+        case 'douyin':
+          alert('请使用抖音APP扫码分享');
+          return;
+        case 'xiaohongshu':
+          alert('请使用小红书APP分享');
+          return;
+        case 'twitter':
+          url = `https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}`;
+          break;
+        case 'instagram':
+          alert('请使用Instagram APP分享');
+          return;
+        case 'telegram':
+          url = `https://t.me/share/url?url=${shareUrl}&text=${shareText}`;
+          break;
+        case 'facebook':
+          url = `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`;
+          break;
+        case 'linkedin':
+          url = `https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`;
+          break;
+      }
+      
+      if (url) {
+        window.open(url, '_blank', 'width=600,height=400');
+      }
+    }
+    
+    // 下载功能
+    function downloadResult() {
+      const content = document.getElementById('resultBlocks')?.innerText || document.getElementById('textPreview').innerText || '';
+      if (!content || content.includes('预览结果将显示在这里')) {
+        showMessage(currentLang === 'zh' ? '暂无内容可下载' : 'No content to download', 'error');
+        return;
+      }
+      
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `mediaprompt-${Date.now()}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showMessage(currentLang === 'zh' ? '下载成功' : 'Downloaded successfully');
+    }
+    const API_BASE_URL = 'http://124.156.200.127:3001';
+    let currentType = 'document', uploadedFile = null, thinkingStartTime = null, thinkingExpanded = true;
+    let currentLang = 'zh';
+    
+    // 中英文切换
+    const translations = {
+      zh: {
+        title: 'MediaPrompt AI - 内容反向提示词工具',
+        // 侧边栏
+        analysisTools: '分析工具',
+        docAnalysis: '文档分析',
+        imageAnalysis: '图片分析',
+        videoAnalysis: '视频分析',
+        webAnalysis: '网页分析',
+        caseShowcase: '案例展示',
+        docCases: '文档案例',
+        imageCases: '图片案例',
+        videoCases: '视频案例',
+        webCases: '网页案例',
+        personalCenter: '个人中心',
+        history: '历史记录',
+        settings: '设置',
+        username: '用户名',
+        freeUser: '免费用户',
+        // 顶部导航
+        home: '首页',
+        pricing: '定价',
+        about: '关于',
+        login: '登录',
+        register: '注册',
+        slogan: '最好的学习从模仿开始',
+        // 副标题
+        subtitle: '上传你喜欢的内容，提炼有效提示词，让美好可以复刻迭代',
+        // AI面板
+        aiTitle: 'AI正在分析生成',
+        // 上传区域
+        dragDrop: '拖放文件到此处',
+        selectFile: '📁 选择文件上传',
+        uploadHint: '支持 Word/PDF/TXT/Markdown',
+        imageHint: '支持 JPG/PNG/WebP/GIF',
+        videoHint: '支持 MP4/MOV，建议30秒内',
+        websiteHint: '支持 URL/网页截图',
+        analyzeBtn: '🔍 开始分析提炼',
+        analyzingBtn: '⏳ 分析中...',
+        // 输出选项
+        outputContent: '输出内容（可多选）',
+        categories: {
+          document: '文档',
+          image: '图片',
+          video: '视频',
+          website: '网页'
+        },
+        docOptions: {
+          prompt: '提示词整合',
+          outline: '大纲梗概',
+          structure: '结构分析',
+          keywords: '关键词'
+        },
+        imageOptions: {
+          prompt: '提示词整合',
+          style: '风格',
+          colors: '配色方案',
+          params: '参数建议'
+        },
+        videoOptions: {
+          prompt: '提示词整合',
+          scene: '场景描述',
+          style: '风格',
+          light: '光影',
+          subject: '主体与动作',
+          camera: '镜头变化',
+          storyboard: '分镜说明',
+          detail: '细节分析',
+          motion: '动态细节'
+        },
+        websiteOptions: {
+          prompt: '提示词整合',
+          features: '功能列表',
+          mvp: 'MVP文档',
+          tech: '技术栈'
+        },
+        // 编辑区域
+        editPrompt: '编辑自己的提示词',
+        editPromptHint: '用上方生成的提示词创作你的内容',
+        editPlaceholder: '在这里编辑提示词，或使用上方AI生成的提示词...',
+        // 参考文件
+        refFile: '上传参考文件（可选）',
+        refFileHint: '支持图片、文档等作为创作参考',
+        selectRefFile: '选择文件',
+        // 预览
+        preview: '✨ 创意类似+',
+        previewPlaceholder: '预览结果将显示在这里...',
+        // 模型选择
+        modelSelect: '模型选择：',
+        autoSelect: '🤖 自动选择',
+        domesticModels: '国内模型',
+        intlModels: '国际模型',
+        // 操作按钮
+        usePrompt: '使用提示词',
+        usePromptHint: '将提示词填入编辑框',
+        copy: '复制',
+        copied: '已复制',
+        // 状态
+        emptyState: '上传内容后点击"开始分析提炼"，AI将展示完整的分析过程和最终提示词',
+        thinkingLabel: '思考过程',
+        uploadSuccess: '已选择',
+        refUploadSuccess: '参考文件已上传',
+        analysisComplete: '分析完成！',
+        pleaseUpload: '请先上传文件',
+        promptFilled: '提示词已填入编辑框',
+        resultsFilled: '分析结果已填入编辑框',
+        pleaseAnalyze: '请先分析生成提示词',
+        previewTitle: '预览',
+        previewPlaceholder: '预览结果将显示在这里...',
+        download: '下载',
+        downloadSuccess: '下载成功',
+        noContent: '暂无内容可下载',
+        share: '分享'
+        thinkingSteps: {
+          parse: '解析视频文件格式、时长、分辨率...',
+          extract: '提取视频关键帧，捕捉场景变化...',
+          scene: '分析场景描述：环境、背景、空间布局...',
+          style: '识别视觉风格：色调、滤镜、画面质感...',
+          light: '分析光影效果：光源方向、明暗对比、氛围...',
+          subject: '识别主体与动作：人物/物体、行为、表情...',
+          camera: '分析镜头变化：运镜方式、景别、转场...',
+          storyboard: '解析分镜节奏：时长分配、节奏感、情绪曲线...',
+          detail: '捕捉细节元素：道具、文字、特效、音效...',
+          final: '整合分析结果，生成结构化提示词...'
+        },
+        outputBlocks: {
+          scene: '场景描述',
+          style: '风格',
+          light: '光影',
+          subject: '主体与动作',
+          camera: '镜头变化',
+          storyboard: '分镜说明',
+          detail: '细节分析',
+          motion: '动态细节',
+          prompt: '提示词整合'
+        }
+      },
+      en: {
+        title: 'MediaPrompt AI - Content Reverse Prompt Tool',
+        // Sidebar
+        analysisTools: 'Analysis Tools',
+        docAnalysis: 'Document',
+        imageAnalysis: 'Image',
+        videoAnalysis: 'Video',
+        webAnalysis: 'Website',
+        caseShowcase: 'Case Studies',
+        docCases: 'Document Cases',
+        imageCases: 'Image Cases',
+        videoCases: 'Video Cases',
+        webCases: 'Website Cases',
+        personalCenter: 'Personal',
+        history: 'History',
+        settings: 'Settings',
+        username: 'Username',
+        freeUser: 'Free User',
+        // Top Nav
+        home: 'Home',
+        pricing: 'Pricing',
+        about: 'About',
+        login: 'Login',
+        register: 'Register',
+        slogan: 'Best Learning Starts from Imitation',
+        // Subtitle
+        subtitle: 'Upload your content, extract effective prompts, replicate the beauty',
+        // AI Panel
+        aiTitle: 'AI Analyzing & Generating',
+        // Upload
+        dragDrop: 'Drag & drop files here',
+        selectFile: '📁 Select File',
+        uploadHint: 'Support Word/PDF/TXT/Markdown',
+        imageHint: 'Support JPG/PNG/WebP/GIF',
+        videoHint: 'Support MP4/MOV, within 30 seconds',
+        websiteHint: 'Support URL/Screenshot',
+        analyzeBtn: '🔍 Start Analysis',
+        analyzingBtn: '⏳ Analyzing...',
+        // Output Options
+        outputContent: 'Output (Multi-select)',
+        categories: {
+          document: 'Document',
+          image: 'Image',
+          video: 'Video',
+          website: 'Website'
+        },
+        docOptions: {
+          prompt: 'Prompt',
+          outline: 'Outline',
+          structure: 'Structure',
+          keywords: 'Keywords'
+        },
+        imageOptions: {
+          prompt: 'Prompt',
+          style: 'Style',
+          colors: 'Color Palette',
+          params: 'Params'
+        },
+        videoOptions: {
+          prompt: 'Prompt',
+          scene: 'Scene',
+          style: 'Style',
+          light: 'Lighting',
+          subject: 'Subject & Action',
+          camera: 'Camera',
+          storyboard: 'Storyboard',
+          detail: 'Details',
+          motion: 'Motion'
+        },
+        websiteOptions: {
+          prompt: 'Prompt',
+          features: 'Features',
+          mvp: 'MVP Doc',
+          tech: 'Tech Stack'
+        },
+        // Edit
+        editPrompt: 'Edit Your Prompt',
+        editPromptHint: 'Create content using prompts generated above',
+        editPlaceholder: 'Edit prompt here or use AI generated prompts above...',
+        // Reference File
+        refFile: 'Upload Reference (Optional)',
+        refFileHint: 'Support images, documents as reference',
+        selectRefFile: 'Select',
+        // Preview
+        preview: '✨ Similar Ideas+',
+        previewPlaceholder: 'Preview results will appear here...',
+        // Model
+        modelSelect: 'Model: ',
+        autoSelect: '🤖 Auto',
+        domesticModels: 'Domestic Models',
+        intlModels: 'International Models',
+        // Buttons
+        usePrompt: 'Use Prompt',
+        usePromptHint: 'Fill prompt into editor',
+        copy: 'Copy',
+        copied: 'Copied!',
+        // Status
+        emptyState: 'Upload content and click "Start Analysis" to see AI thinking process and prompts',
+        thinkingLabel: 'Thinking Process',
+        uploadSuccess: 'Selected',
+        refUploadSuccess: 'Reference file uploaded',
+        analysisComplete: 'Analysis complete!',
+        pleaseUpload: 'Please upload a file first',
+        promptFilled: 'Prompt filled in editor',
+        resultsFilled: 'Results filled in editor',
+        pleaseAnalyze: 'Please analyze first to generate prompt',
+        previewTitle: 'Preview',
+        previewPlaceholder: 'Preview results will appear here...',
+        download: 'Download',
+        downloadSuccess: 'Downloaded successfully',
+        noContent: 'No content to download',
+        share: 'Share'
+        thinkingSteps: {
+          parse: 'Parsing video format, duration, resolution...',
+          extract: 'Extracting key frames, capturing scene changes...',
+          scene: 'Analyzing scene: environment, background, layout...',
+          style: 'Identifying visual style: color tone, filters...',
+          light: 'Analyzing lighting: light direction, contrast...',
+          subject: 'Identifying subject and actions: objects, behaviors...',
+          camera: 'Analyzing camera movement: angles, transitions...',
+          storyboard: 'Parsing shot rhythm: timing, pacing...',
+          detail: 'Capturing details: props, text, effects, audio...',
+          final: 'Integrating analysis, generating structured prompts...'
+        },
+        outputBlocks: {
+          scene: 'Scene',
+          style: 'Style',
+          light: 'Lighting',
+          subject: 'Subject',
+          camera: 'Camera',
+          storyboard: 'Storyboard',
+          detail: 'Details',
+          motion: 'Motion',
+          prompt: 'Prompt'
+        }
+      }
+    };
+    
+    function t(key) {
+      return translations[currentLang][key] || key;
+    }
+    
+    function updateLanguage() {
+      // 更新语言切换按钮状态
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.lang === currentLang);
+      });
+      // 更新页面标题
+      document.title = t('title');
+      
+      // 更新侧边栏 - 分析工具
+      const sidebarTitles = document.querySelectorAll('.sidebar .text-xs.text-gray-400');
+      if (sidebarTitles[0]) sidebarTitles[0].textContent = t('analysisTools');
+      if (sidebarTitles[1]) sidebarTitles[1].textContent = t('caseShowcase');
+      if (sidebarTitles[2]) sidebarTitles[2].textContent = t('personalCenter');
+      
+      // 更新侧边栏项目
+      const sidebarItems = document.querySelectorAll('.sidebar nav .nav-item span');
+      if (sidebarItems[0]) sidebarItems[0].textContent = t('docAnalysis');
+      if (sidebarItems[1]) sidebarItems[1].textContent = t('imageAnalysis');
+      if (sidebarItems[2]) sidebarItems[2].textContent = t('videoAnalysis');
+      if (sidebarItems[3]) sidebarItems[3].textContent = t('webAnalysis');
+      if (sidebarItems[4]) sidebarItems[4].textContent = t('docCases');
+      if (sidebarItems[5]) sidebarItems[5].textContent = t('imageCases');
+      if (sidebarItems[6]) sidebarItems[6].textContent = t('videoCases');
+      if (sidebarItems[7]) sidebarItems[7].textContent = t('webCases');
+      if (sidebarItems[8]) sidebarItems[8].textContent = t('history');
+      if (sidebarItems[9]) sidebarItems[9].textContent = t('settings');
+      
+      // 更新用户信息
+      const userEls = document.querySelectorAll('.sidebar .p-4 p');
+      if (userEls[0]) userEls[0].textContent = t('username');
+      if (userEls[1]) userEls[1].textContent = t('freeUser');
+      
+      // 更新顶部导航
+      const topNavLinks = document.querySelectorAll('nav.h-14 a');
+      if (topNavLinks[0]) topNavLinks[0].textContent = t('home');
+      if (topNavLinks[1]) topNavLinks[1].textContent = t('pricing');
+      if (topNavLinks[2]) topNavLinks[2].textContent = t('about');
+      
+      // 更新slogan
+      const slogan = document.querySelector('nav.h-14 h1');
+      if (slogan) slogan.textContent = t('slogan');
+      
+      // 更新登录注册按钮
+      const loginBtn = document.querySelector('nav.h-14 button:not(.lang-btn):not(.btn-primary)');
+      if (loginBtn) loginBtn.textContent = t('login');
+      const registerBtn = document.querySelector('nav.h-14 .btn-primary');
+      if (registerBtn) registerBtn.textContent = t('register');
+      
+      // 更新副标题
+      const subtitle = document.querySelector('.fixed-header .text-gray-500');
+      if (subtitle) subtitle.textContent = t('subtitle');
+      
+      // 更新分类按钮
+      document.querySelectorAll('.category-btn').forEach(btn => {
+        const type = btn.dataset.type;
+        const textSpan = btn.querySelector('.category-text');
+        if (textSpan && t('categories')[type]) {
+          textSpan.textContent = t('categories')[type];
+        }
+      });
+      
+      // 更新AI标题
+      document.querySelector('.ai-panel-title span').textContent = t('aiTitle');
+      
+      // 更新上传区域
+      const uploadZoneText = document.querySelector('#uploadZone p.text-gray-600');
+      if (uploadZoneText) uploadZoneText.textContent = t('dragDrop');
+      
+      // 更新文件提示
+      document.getElementById('fileHint').textContent = getFileHint();
+      
+      // 更新上传按钮
+      const uploadBtn = document.querySelector('#uploadZone button');
+      if (uploadBtn) uploadBtn.textContent = t('selectFile');
+      
+      // 更新输出内容标题
+      const outputLabel = document.getElementById('outputLabel');
+      if (outputLabel) outputLabel.textContent = t('outputContent');
+      
+      // 更新编辑提示词标题
+      const editTitle = document.querySelector('#editorArea').previousElementSibling.querySelector('h3');
+      if (editTitle) editTitle.textContent = t('editPrompt');
+      
+      // 更新编辑提示词占位符
+      document.getElementById('editorArea').placeholder = t('editPlaceholder');
+      
+      // 更新编辑提示词提示
+      const editHint = document.querySelector('#editorArea').previousElementSibling.querySelector('span');
+      if (editHint) editHint.textContent = t('editPromptHint');
+      
+      // 更新参考文件区域
+      const refFileTitle = document.querySelector('#refUploadArea p.text-sm');
+      if (refFileTitle) refFileTitle.textContent = t('refFile');
+      
+      // 更新参考文件提示
+      const refFileHint = document.getElementById('refFileHint');
+      if (refFileHint) refFileHint.textContent = t('refFileHint');
+      
+      // 更新选择文件按钮
+      const refFileBtn = document.querySelector('#refUploadArea button.btn-secondary');
+      if (refFileBtn) refFileBtn.textContent = t('selectRefFile');
+      
+      // 更新模型选择标签
+      document.querySelectorAll('span.text-sm.text-gray-500').forEach(label => {
+        if (label.textContent.includes('模型选择') || label.textContent.includes('Model')) {
+          label.textContent = t('modelSelect');
+        }
+      });
+      
+      // 更新模型选择下拉框的optgroup label
+      document.querySelectorAll('optgroup[data-i18n="domestic"]').forEach(opt => {
+        opt.label = '🇨🇳 ' + t('domesticModels');
+      });
+      document.querySelectorAll('optgroup[data-i18n="international"]').forEach(opt => {
+        opt.label = '🌍 ' + t('intlModels');
+      });
+      
+      // 更新预览按钮
+      document.getElementById('previewBtn').innerHTML = t('preview');
+      
+      // 更新分析按钮
+      document.getElementById('analyzeBtn').textContent = t('analyzeBtn');
+      
+      // 更新使用提示词按钮
+      const usePromptBtn = document.getElementById('usePromptBtn');
+      if (usePromptBtn) usePromptBtn.querySelector('span').textContent = t('usePrompt');
+      
+      // 更新复制按钮
+      const copyBtn = document.getElementById('copyBtn');
+      if (copyBtn) copyBtn.querySelector('span').textContent = t('copy');
+      
+      // 更新空状态
+      const emptyState = document.getElementById('resultPlaceholder');
+      if (emptyState) emptyState.textContent = t('emptyState');
+      
+      // 更新思考过程标题
+      const thinkingLabel = document.querySelector('.thinking-label');
+      if (thinkingLabel) thinkingLabel.textContent = t('thinkingLabel');
+      
+      // 更新输出选项
+      updateOptionTags();
+      
+      // 更新社交媒体按钮显示（中文显示国内，英文显示国际）
+      const chinaSocials = document.getElementById('chinaSocials');
+      const intlSocials = document.getElementById('intlSocials');
+      if (chinaSocials && intlSocials) {
+        if (currentLang === 'zh') {
+          chinaSocials.classList.remove('hidden');
+          intlSocials.classList.add('hidden');
+        } else {
+          chinaSocials.classList.add('hidden');
+          intlSocials.classList.remove('hidden');
+        }
+      }
+      
+      // 更新下载按钮文字
+      const downloadBtn = document.querySelector('[onclick="downloadResult()"] span');
+      if (downloadBtn) downloadBtn.textContent = t('download') || (currentLang === 'zh' ? '下载' : 'Download');
+      
+      // 更新预览标题
+      const previewTitle = document.getElementById('previewTitle');
+      if (previewTitle) previewTitle.textContent = t('previewTitle');
+      
+      // 更新预览占位符
+      const previewPlaceholder = document.getElementById('previewPlaceholder');
+      if (previewPlaceholder) previewPlaceholder.textContent = t('previewPlaceholder');
+    }
+    
+    function updateOptionTags() {
+      const optionGroups = {
+        document: 'documentOptions',
+        image: 'imageOptions',
+        video: 'videoOptions',
+        website: 'websiteOptions'
+      };
+      const optionsMap = {
+        document: translations[currentLang].docOptions,
+        image: translations[currentLang].imageOptions,
+        video: translations[currentLang].videoOptions,
+        website: translations[currentLang].websiteOptions
+      };
+      
+      Object.keys(optionGroups).forEach(type => {
+        const container = document.getElementById(optionGroups[type]);
+        if (container) {
+          const tags = container.querySelectorAll('.option-tag');
+          const options = optionsMap[type];
+          tags.forEach(tag => {
+            const value = tag.dataset.value;
+            const textEl = tag.querySelector('.tag-text');
+            if (textEl && options[value]) {
+              textEl.textContent = options[value];
+            }
+          });
+        }
+      });
+    }
+
+    // 等待DOM加载完成后执行初始化
+    document.addEventListener('DOMContentLoaded', function() {
+    
+    // 监听语言切换
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        currentLang = this.dataset.lang;
+        updateLanguage();
+      });
+    });
+    
+    // 思考区域折叠
+    document.getElementById('thinkingHeader')?.addEventListener('click', function() {
+      thinkingExpanded = !thinkingExpanded;
+      document.getElementById('thinkingToggle').classList.toggle('expanded', thinkingExpanded);
+      document.getElementById('thinkingContent').classList.toggle('show', thinkingExpanded);
+    });
+    
+    function showMessage(msg, type = 'info') {
+      const area = document.getElementById('messageArea');
+      area.className = type === 'error' ? 'error-message' : 'success-message';
+      area.textContent = msg;
+      area.classList.remove('hidden');
+      setTimeout(() => area.classList.add('hidden'), 4000);
+    }
+    
+    function getSelectedOptions() {
+      const container = document.getElementById(currentType + 'Options');
+      return Array.from(container.querySelectorAll('.option-tag.selected')).map(el => el.dataset.value);
+    }
+    
+    // 视频分析的思考步骤
+    function getVideoThinkingSteps() {
+      const steps = translations[currentLang].thinkingSteps;
+      return [
+        { text: steps.parse, duration: 500 },
+        { text: steps.extract, duration: 600 },
+        { text: steps.scene, duration: 700 },
+        { text: steps.style, duration: 600 },
+        { text: steps.light, duration: 500 },
+        { text: steps.subject, duration: 700 },
+        { text: steps.camera, duration: 600 },
+        { text: steps.storyboard, duration: 500 },
+        { text: steps.detail, duration: 600 },
+        { text: steps.final, duration: 400 }
+      ];
+    }
+    
+    // 其他类型的思考步骤
+    function getDefaultThinkingSteps() {
+      return [
+        { text: '解析文件格式和内容...', duration: 600 },
+        { text: '识别内容类型和主题...', duration: 500 },
+        { text: '提取关键信息和结构...', duration: 700 },
+        { text: '分析风格和表达方式...', duration: 500 },
+        { text: '生成结构化提示词...', duration: 400 }
+      ];
+    }
+    
+    async function runThinkingSteps(steps) {
+      const container = document.getElementById('thinkingContent');
+      container.innerHTML = '';
+      
+      for (let i = 0; i < steps.length; i++) {
+        const stepEl = document.createElement('div');
+        stepEl.className = 'thinking-step active';
+        stepEl.innerHTML = `<div class="thinking-step-dot"></div><span>${steps[i].text}</span>`;
+        container.appendChild(stepEl);
+        
+        await new Promise(r => setTimeout(r, steps[i].duration));
+        
+        stepEl.classList.remove('active');
+        stepEl.classList.add('done');
+        
+        const elapsed = ((Date.now() - thinkingStartTime) / 1000).toFixed(1);
+        document.getElementById('thinkingTime').textContent = `${elapsed}秒`;
+      }
+    }
+    
+    // 流式输出打字机效果
+    async function typeWriter(element, text, speed = 15) {
+      return new Promise(resolve => {
+        let i = 0;
+        const cursor = document.createElement('span');
+        cursor.className = 'typing-cursor';
+        element.appendChild(cursor);
+        
+        const timer = setInterval(() => {
+          if (i < text.length) {
+            const char = text[i] === '\n' ? '<br>' : text[i];
+            element.insertBefore(document.createTextNode(text[i]), cursor);
+            i++;
+            element.scrollTop = element.scrollHeight;
+          } else {
+            clearInterval(timer);
+            cursor.remove();
+            resolve();
+          }
+        }, speed);
+      });
+    }
+    
+    async function showVideoResultsStreaming() {
+      const labels = translations[currentLang].outputBlocks;
+      const blocks = [
+        { type: 'scene', title: labels.scene, content: '温馨的家庭厨房环境，背景干净整洁，操作台上摆放着新鲜食材和厨具。空间布局紧凑但不拥挤，营造舒适的烹饪氛围。色调以暖黄和米白为主，给人温暖治愈的感觉。' },
+        { type: 'style', title: labels.style, content: '治愈系美食教程风格，整体调性温馨柔和。画面采用低饱和度暖色调，带有轻微的复古滤镜感。节奏舒缓，适合放松观看，类似李子柒风格的现代都市版本。' },
+        { type: 'light', title: labels.light, content: '采用自然光为主光源，从侧前方照射，形成柔和的明暗过渡。阴影较浅，整体画面通透。高光区域适度，不过曝，保留食材的质感和色彩层次。' },
+        { type: 'subject', title: labels.subject, content: '主体为双手烹饪过程，动作流畅自然。手部特写展示切菜、调味、翻炒等操作，节奏匀速。无人物面部露出，聚焦于烹饪本身，增强代入感。' },
+        { type: 'camera', title: labels.camera, content: '以俯拍视角为主，偶尔切换微距特写。镜头多为固定机位，配合缓慢推进。景别从中景到特写交替，转场使用自然渐变，无花哨剪辑效果。' },
+        { type: 'storyboard', title: labels.storyboard, content: '整体节奏舒缓平稳，每个步骤停留3-5秒。开头展示食材准备（约5秒），中间烹饪过程（约15秒），结尾成品呈现（约5秒）。情绪曲线平缓上升，结尾有满足感。' },
+        { type: 'detail', title: labels.detail, content: '食材色彩鲜艳丰富：红色番茄、绿色蔬菜、金黄色油脂。厨具简洁现代，无品牌露出。背景有轻微虚化，突出前景操作。声音为环境音+轻音乐，无旁白。' },
+        { type: 'motion', title: labels.motion, content: '视频包含多个动态元素：蒸汽升腾、油花飞溅、食材翻动等。这些动态细节增添了画面的生动感和食欲感。运动轨迹流畅，无明显卡顿，帧率稳定。' },
+        { type: 'final', title: labels.prompt, content: 'A cozy cooking tutorial video, overhead shot perspective, warm and healing style. Scene shows a clean home kitchen with fresh colorful ingredients on the counter. Soft natural lighting from side-front, creating gentle shadows. Subject features hands-only cooking demonstration, smooth and natural movements. Camera uses fixed positions with occasional macro close-ups, slow push-in effects. Warm yellow and beige color palette with slight vintage filter. Relaxing rhythm with ambient sounds and soft background music. No face shown, focus on the cooking process. Suitable for food blogger content, 15-30 seconds duration.', isPrompt: true }
+      ];
+      
+      const container = document.getElementById('resultBlocks');
+      container.innerHTML = '';
+      document.getElementById('resultPlaceholder').classList.add('hidden');
+      container.classList.remove('hidden');
+      
+      for (const block of blocks) {
+        const blockEl = document.createElement('div');
+        blockEl.className = `prompt-block ${block.type}`;
+        blockEl.innerHTML = `<div class="prompt-label">${block.title}</div><div class="prompt-content"></div>`;
+        container.appendChild(blockEl);
+        
+        const contentEl = blockEl.querySelector('.prompt-content');
+        await typeWriter(contentEl, block.content, 12);
+        await new Promise(r => setTimeout(r, 200));
+      }
+    }
+    
+    function showVideoResults() {
+      const blocks = [
+        { type: 'style', title: '场景描述', content: '温馨的家庭厨房环境，背景干净整洁，操作台上摆放着新鲜食材和厨具。空间布局紧凑但不拥挤，营造舒适的烹饪氛围。色调以暖黄和米白为主，给人温暖治愈的感觉。' },
+        { type: 'style', title: '风格分析', content: '治愈系美食教程风格，整体调性温馨柔和。画面采用低饱和度暖色调，带有轻微的复古滤镜感。节奏舒缓，适合放松观看，类似李子柒风格的现代都市版本。' },
+        { type: 'light', title: '光影效果', content: '采用自然光为主光源，从侧前方照射，形成柔和的明暗过渡。阴影较浅，整体画面通透。高光区域适度，不过曝，保留食材的质感和色彩层次。' },
+        { type: 'subject', title: '主体与动作', content: '主体为双手烹饪过程，动作流畅自然。手部特写展示切菜、调味、翻炒等操作，节奏匀速。无人物面部露出，聚焦于烹饪本身，增强代入感。' },
+        { type: 'camera', title: '镜头变化', content: '以俯拍视角为主，偶尔切换微距特写。镜头多为固定机位，配合缓慢推进。景别从中景到特写交替，转场使用自然渐变，无花哨剪辑效果。' },
+        { type: 'storyboard', title: '分镜节奏', content: '整体节奏舒缓平稳，每个步骤停留3-5秒。开头展示食材准备（约5秒），中间烹饪过程（约15秒），结尾成品呈现（约5秒）。情绪曲线平缓上升，结尾有满足感。' },
+        { type: 'detail', title: '细节分析', content: '食材色彩鲜艳丰富：红色番茄、绿色蔬菜、金黄色油脂。厨具简洁现代，无品牌露出。背景有轻微虚化，突出前景操作。声音为环境音+轻音乐，无旁白。' },
+        { type: 'final', title: '整合提示词', content: 'A cozy cooking tutorial video, overhead shot perspective, warm and healing style. Scene shows a clean home kitchen with fresh colorful ingredients on the counter. Soft natural lighting from side-front, creating gentle shadows. Subject features hands-only cooking demonstration, smooth and natural movements. Camera uses fixed positions with occasional macro close-ups, slow push-in effects. Warm yellow and beige color palette with slight vintage filter. Relaxing rhythm with ambient sounds and soft background music. No face shown, focus on the cooking process. Suitable for food blogger content, 15-30 seconds duration.', isPrompt: true }
+      ];
+      
+      const container = document.getElementById('resultBlocks');
+      container.innerHTML = blocks.map(b => `
+        <div class="prompt-block ${b.type}">
+          <div class="prompt-label">${b.title}</div>
+          <div class="prompt-content">${b.content.replace(/\n/g, '<br>')}</div>
+        </div>
+      `).join('');
+      
+      document.getElementById('resultPlaceholder').classList.add('hidden');
+      container.classList.remove('hidden');
+    }
+    
+    function showDefaultResults() {
+      const labels = translations[currentLang].outputBlocks;
+      const container = document.getElementById('resultBlocks');
+      const content = currentLang === 'zh' 
+        ? `<div class="prompt-block">
+          <div class="prompt-label">内容概述</div>
+          <div class="prompt-content">这是一个示例文档内容，AI会根据上传的文件自动分析并生成结构化的提示词。</div>
+        </div>
+        <div class="prompt-block final">
+          <div class="prompt-label">提示词</div>
+          <div class="prompt-content">上传文件后，AI将自动生成针对性的提示词内容。</div>
+        </div>`
+        : `<div class="prompt-block">
+          <div class="prompt-label">Content Overview</div>
+          <div class="prompt-content">This is a sample document. AI will analyze the uploaded file and generate structured prompts.</div>
+        </div>
+        <div class="prompt-block final">
+          <div class="prompt-label">Prompt</div>
+          <div class="prompt-content">Upload a file and AI will automatically generate targeted prompt content.</div>
+        </div>`;
+      container.innerHTML = content;
+      document.getElementById('resultPlaceholder').classList.add('hidden');
+      container.classList.remove('hidden');
+    }
+    
+    async function analyzeContent() {
+      if (!uploadedFile) {
+        showMessage(currentLang === 'zh' ? '请先上传文件' : 'Please upload a file first', 'error');
+        return;
+      }
+      
+      const btn = document.getElementById('analyzeBtn');
+      btn.disabled = true;
+      btn.textContent = '⏳ 分析中...';
+      btn.classList.remove('btn-primary');
+      btn.classList.add('btn-loading');
+      
+      thinkingStartTime = Date.now();
+      document.getElementById('thinkingSection').classList.remove('hidden');
+      document.getElementById('thinkingContent').classList.add('show');
+      document.getElementById('thinkingToggle').classList.add('expanded');
+      document.getElementById('resultBlocks').classList.add('hidden');
+      document.getElementById('resultPlaceholder').classList.add('hidden');
+      
+      // 添加心跳呼吸动画
+      const aiTitle = document.querySelector('.ai-panel-title');
+      aiTitle.classList.add('ai-title-breathing');
+      
+      // 选择思考步骤
+      const steps = currentType === 'video' ? getVideoThinkingSteps() : getDefaultThinkingSteps();
+      await runThinkingSteps(steps);
+      
+      // 显示结果（使用流式输出）
+      if (currentType === 'video') {
+        await showVideoResultsStreaming();
+      } else {
+        showDefaultResults();
+      }
+      
+      // 调用API（如果需要）
+      try {
+        const formData = new FormData();
+        formData.append('file', uploadedFile);
+        formData.append('category', currentType);
+        formData.append('outputOptions', JSON.stringify(getSelectedOptions()));
+        
+        // 这里可以调用后端API
+        // const response = await fetch(`${API_BASE_URL}/api/analyze/file`, { method: 'POST', body: formData });
+      } catch (error) {
+        console.error(error);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = t('analyzeBtn');
+        btn.classList.remove('btn-loading');
+        btn.classList.add('btn-primary');
+        // 移除心跳呼吸动画
+        const aiTitle = document.querySelector('.ai-panel-title');
+        aiTitle.classList.remove('ai-title-breathing');
+        showMessage(currentLang === 'zh' ? '分析完成！' : 'Analysis complete!');
+      }
+    }
+    
+    // 类别切换
+    const categoryBtns = document.querySelectorAll('.category-btn');
+    const optionGroups = { document: 'documentOptions', image: 'imageOptions', video: 'videoOptions', website: 'websiteOptions' };
+    const hints = {
+      document: { zh: '支持 Word/PDF/TXT/Markdown', en: 'Support Word/PDF/TXT/Markdown' },
+      image: { zh: '支持 JPG/PNG/WebP/GIF', en: 'Support JPG/PNG/WebP/GIF' },
+      video: { zh: '支持 MP4/MOV，建议30秒内', en: 'Support MP4/MOV, within 30 seconds' },
+      website: { zh: '支持 URL/网页截图', en: 'Support URL/Screenshot' }
+    };
+    
+    function getFileHint() {
+      return hints[currentType][currentLang];
+    }
+    
+    categoryBtns.forEach(btn => {
+      btn.addEventListener('click', function() {
+        categoryBtns.forEach(b => { b.classList.remove('bg-white', 'text-gray-800', 'border-gray-600', 'shadow-sm'); b.classList.add('text-gray-500', 'border-gray-200'); });
+        this.classList.remove('text-gray-500', 'border-gray-200');
+        this.classList.add('bg-white', 'text-gray-800', 'border-gray-600', 'shadow-sm');
+        currentType = this.dataset.type;
+        Object.values(optionGroups).forEach(id => document.getElementById(id).classList.add('hidden'));
+        document.getElementById(optionGroups[currentType]).classList.remove('hidden');
+        document.getElementById('fileHint').textContent = getFileHint();
+        // 更新输出选项
+        updateOptionTags();
+        
+        // 显示/隐藏视频尺寸选择和AI配音（仅视频类别）
+        const videoAspectSection = document.getElementById('videoAspectSection');
+        const voiceoverSection = document.getElementById('voiceoverSection');
+        const imageCount = document.getElementById('imageCount');
+        
+        if (currentType === 'video') {
+          if (videoAspectSection) videoAspectSection.style.display = 'block';
+          if (voiceoverSection) voiceoverSection.style.display = 'block';
+          if (imageCount) imageCount.style.display = 'none';
+        } else if (currentType === 'image') {
+          if (videoAspectSection) videoAspectSection.style.display = 'none';
+          if (voiceoverSection) voiceoverSection.style.display = 'none';
+          if (imageCount) imageCount.style.display = 'flex';
+        } else {
+          if (videoAspectSection) videoAspectSection.style.display = 'none';
+          if (voiceoverSection) voiceoverSection.style.display = 'none';
+          if (imageCount) imageCount.style.display = 'none';
+        }
+      });
+    });
+    
+    // 视频尺寸选择
+    document.querySelectorAll('.aspect-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.aspect-btn').forEach(b => {
+          b.classList.remove('bg-white', 'text-gray-700', 'shadow-sm');
+          b.classList.add('text-gray-500');
+        });
+        this.classList.remove('text-gray-500');
+        this.classList.add('bg-white', 'text-gray-700', 'shadow-sm');
+      });
+    });
+    
+    // AI配音风格选择
+    document.querySelectorAll('.voice-style').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.voice-style').forEach(b => {
+          b.classList.remove('bg-amber-100', 'border-amber-400');
+        });
+        this.classList.add('bg-amber-100', 'border-amber-400');
+      });
+    });
+    
+    // 选项切换
+    document.querySelectorAll('.option-tag').forEach(tag => {
+      tag.addEventListener('click', function() { this.classList.toggle('selected'); });
+    });
+    
+    // 文件上传
+    const uploadZone = document.getElementById('uploadZone');
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+      if (e.target.files.length > 0) {
+        uploadedFile = e.target.files[0];
+        const msg = currentLang === 'zh' ? `已选择: ${uploadedFile.name}` : `Selected: ${uploadedFile.name}`;
+        showMessage(msg);
+      }
+    });
+    
+    // 参考文件上传
+    let refFile = null;
+    document.getElementById('refFileInput').addEventListener('change', function(e) {
+      if (e.target.files.length > 0) {
+        refFile = e.target.files[0];
+        document.getElementById('refFileName').textContent = refFile.name;
+        document.getElementById('refFileUploaded').classList.remove('hidden');
+        const msg = currentLang === 'zh' ? `参考文件已上传: ${refFile.name}` : `Reference file uploaded: ${refFile.name}`;
+        showMessage(msg);
+      }
+    });
+    
+    document.getElementById('refFileRemove').addEventListener('click', function() {
+      refFile = null;
+      document.getElementById('refFileInput').value = '';
+      document.getElementById('refFileUploaded').classList.add('hidden');
+    });
+    
+    uploadZone.addEventListener('dragover', function(e) { e.preventDefault(); this.classList.add('dragover'); });
+    uploadZone.addEventListener('dragleave', function() { this.classList.remove('dragover'); });
+    uploadZone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      this.classList.remove('dragover');
+      if (e.dataTransfer.files.length > 0) {
+        uploadedFile = e.dataTransfer.files[0];
+        showMessage(`已上传: ${uploadedFile.name}`);
+      }
+    });
+    uploadZone.addEventListener('click', function() { document.getElementById('fileInput').click(); });
+    
+    document.getElementById('analyzeBtn').addEventListener('click', analyzeContent);
+    
+    // 使用提示词（填入编辑框）
+    document.getElementById('usePromptBtn').addEventListener('click', function() {
+      const blocks = document.getElementById('resultBlocks');
+      if (!blocks || blocks.classList.contains('hidden')) {
+        showMessage(currentLang === 'zh' ? '请先分析生成提示词' : 'Please analyze first to generate prompt', 'error');
+        return;
+      }
+      // 获取最终的提示词（最后一个块的内容）
+      const lastBlock = blocks.querySelector('.prompt-block.final .prompt-content');
+      if (lastBlock) {
+        document.getElementById('editorArea').value = lastBlock.innerText;
+        showMessage(currentLang === 'zh' ? '提示词已填入编辑框，可进行修改后创作' : 'Prompt filled in editor');
+        // 滚动到编辑区域
+        document.getElementById('editorArea').scrollIntoView({ behavior: 'smooth' });
+      } else {
+        // 如果没有final块，获取所有内容
+        document.getElementById('editorArea').value = blocks.innerText;
+        showMessage(currentLang === 'zh' ? '分析结果已填入编辑框' : 'Results filled in editor');
+      }
+    });
+    
+    // 复制
+    document.getElementById('copyBtn').addEventListener('click', function() {
+      const text = document.getElementById('resultBlocks').innerText;
+      if (!text || document.getElementById('resultBlocks').classList.contains('hidden')) return;
+      navigator.clipboard.writeText(text).then(() => {
+        const original = this.innerHTML;
+        this.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> ' + (currentLang === 'zh' ? '已复制' : 'Copied');
+        setTimeout(() => { this.innerHTML = original; }, 2000);
+      });
+    }); // DOMContentLoaded结束
+  </script>
+</body>
+</html>

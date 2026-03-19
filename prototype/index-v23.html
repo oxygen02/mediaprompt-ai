@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediaPrompt AI - Content Reverse Engineering Toolkit</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+    body { background: #f5f5f7; min-height: 100vh; }
+    .sidebar { background: #ffffff; border-right: 1px solid #e5e5e5; position: fixed; top: 0; left: 0; height: 100vh; z-index: 20; }
+    .main-content { margin-left: 208px; min-height: 100vh; }
+    .nav-item { transition: all 0.15s ease; }
+    .nav-item:hover { background: #f5f5f7; }
+    .nav-item.active { background: #e8e8ed; }
+    .upload-zone { background: #ffffff; border: 2px dashed #d1d1d6; transition: all 0.2s ease; }
+    .upload-zone:hover { border-color: #52525b; background: #fafafa; }
+    .upload-zone.dragover { border-color: #52525b; background: #f0f0f0; }
+    .btn-primary { background: linear-gradient(135deg, #52525b 0%, #3f3f46 50%, #52525b 100%); background-size: 200% 200%; animation: gradientShift 3s ease infinite; }
+    @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    .btn-loading { background: #52525b; animation: pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+    .btn-secondary { background: #ffffff; border: 1px solid #d1d1d6; }
+    .btn-secondary:hover { background: #f5f5f7; }
+    .output-card { background: #ffffff; border: 1px solid #e5e5e5; }
+    .lang-btn { transition: all 0.15s ease; }
+    .lang-btn.active { background: #52525b; color: white; }
+    .moon-container { position: relative; width: 32px; height: 32px; }
+    .moon-base { width: 32px; height: 32px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #e4e4e7 0%, #d4d4d8 25%, #a1a1aa 55%, #71717a 80%, #52525b 100%); position: relative; overflow: hidden; animation: moonRotate 20s linear infinite; }
+    @keyframes moonRotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .moon-base::before { content: ''; position: absolute; top: 3px; left: 4px; width: 5px; height: 5px; background: rgba(0,0,0,0.12); border-radius: 50%; box-shadow: 16px 2px 0 -1px rgba(0,0,0,0.08), 20px 10px 0 -2px rgba(0,0,0,0.15), 7px 18px 0 1px rgba(0,0,0,0.1), 18px 20px 0 -1px rgba(0,0,0,0.12); }
+    .moon-shadow { position: absolute; top: 0; left: 0; width: 32px; height: 32px; border-radius: 50%; pointer-events: none; animation: lunarEclipseReal 8s ease-in-out infinite; }
+    @keyframes lunarEclipseReal { 0% { box-shadow: inset 0 0 0 0 rgba(15,15,26,0); } 25% { box-shadow: inset 8px 0 0 0 rgba(15,15,26,0.7); } 50% { box-shadow: inset 18px 0 0 0 rgba(15,15,26,0.95); } 75% { box-shadow: inset 8px 0 0 0 rgba(15,15,26,0.7); } 100% { box-shadow: inset 0 0 0 0 rgba(15,15,26,0); } }
+    .fixed-header { position: fixed; top: 56px; left: 208px; right: 0; z-index: 25; background: #f5f5f7; padding: 12px 24px; }
+    .moon-icon { width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #f5f5f5 0%, #e5e5e5 40%, #d4d4d4 70%, #a3a3a3 100%); position: relative; flex-shrink: 0; }
+    .moon-95 { box-shadow: inset 14px 0 0 0 rgba(20,20,25,0.9); }
+    .moon-70 { box-shadow: inset 11px 0 0 0 rgba(20,20,25,0.9); }
+    .moon-40 { box-shadow: inset 6px 0 0 0 rgba(20,20,25,0.9); }
+    .moon-full { box-shadow: inset 2px 0 0 0 rgba(20,20,25,0.9); }
+    .prompt-block { background: #fafafa; border-left: 3px solid #52525b; padding: 8px 12px; margin-bottom: 8px; border-radius: 0 6px 6px 0; }
+    .prompt-label { font-weight: 600; color: #52525b; font-size: 12px; margin-bottom: 2px; }
+    .prompt-content { color: #4b5563; font-size: 12px; line-height: 1.5; }
+    .prompt-block.workflow { border-left-color: #71717a; }
+    .prompt-block.workflow .prompt-label { color: #71717a; }
+    .prompt-block.examples { border-left-color: #a1a1aa; }
+    .prompt-block.examples .prompt-label { color: #a1a1aa; }
+    .prompt-block.init { border-left-color: #52525b; }
+    .prompt-block.init .prompt-label { color: #52525b; }
+    .output-scroll { max-height: 280px; overflow-y: auto; }
+    .output-scroll::-webkit-scrollbar { width: 6px; }
+    .output-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+    .output-scroll::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+    .output-scroll::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+    .logo-bg { background: linear-gradient(135deg, #52525b 0%, #3f3f46 100%); }
+    .option-tag { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 8px; font-size: 12px; color: #9ca3af; background: #fafafa; border: 1px solid #e5e7eb; cursor: pointer; transition: all 0.15s ease; white-space: nowrap; }
+    .option-tag:hover { color: #6b7280; border-color: #d1d5db; }
+    .option-tag.selected { color: #374151; font-weight: 500; background: #f3f4f6; border-color: #9ca3af; }
+    .option-tag .dot { width: 10px; height: 10px; border-radius: 50%; background: transparent; border: 1.5px solid #d1d5db; transition: all 0.15s ease; flex-shrink: 0; }
+    .option-tag.selected .dot { background: #52525b; border-color: #52525b; }
+    .error-message { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 12px; border-radius: 8px; margin-bottom: 16px; }
+    .success-message { background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a; padding: 12px; border-radius: 8px; margin-bottom: 16px; }
+    /* AI输出过程展示框样式 */
+    .ai-output-panel { background: #ffffff; border: 1px solid #e5e5e5; border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+    .ai-output-header { background: #fafafa; border-bottom: 1px solid #e5e5e5; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; }
+    .ai-output-status { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #6b7280; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #9ca3af; }
+    .status-dot.processing { background: #3b82f6; animation: statusPulse 1.5s ease-in-out infinite; }
+    .status-dot.success { background: #22c55e; }
+    .status-dot.error { background: #ef4444; }
+    @keyframes statusPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.2); } }
+    .ai-output-process { padding: 10px 16px; background: #fafafa; border-bottom: 1px solid #f0f0f0; min-height: 36px; }
+    .process-step { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #6b7280; }
+    .process-step.active { color: #3b82f6; }
+    .process-step.done { color: #22c55e; }
+    .process-step.error { color: #ef4444; }
+    .spinner { width: 14px; height: 14px; border: 2px solid #e5e7eb; border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .ai-output-result { padding: 12px 16px; max-height: 220px; overflow-y: auto; }
+    .ai-output-result::-webkit-scrollbar { width: 4px; }
+    .ai-output-result::-webkit-scrollbar-track { background: #f1f1f1; }
+    .ai-output-result::-webkit-scrollbar-thumb { background: #d1d1d1; border-radius: 2px; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body class="bg-[#f5f5f7] text-gray-800">
+  
+  <!-- 左侧固定导航栏 -->
+  <aside class="sidebar w-52 flex-shrink-0 flex flex-col">
+    <div class="h-14 px-4 border-b border-gray-200 flex items-center">
+      <div class="w-8 h-8 rounded-lg logo-bg flex items-center justify-center"><span class="text-white font-bold text-sm">M</span></div>
+      <span class="font-semibold text-gray-800 ml-2">MediaPrompt</span>
+    </div>
+    <nav class="flex-1 p-3 overflow-y-auto">
+      <div class="text-xs text-gray-400 px-3 py-2">分析工具</div>
+      <a href="#" class="nav-item active flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-700"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><span>文档分析</span></a>
+      <a href="#" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg><span>图片分析</span></a>
+      <a href="#" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg><span>视频分析</span></a>
+      <a href="#" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg><span>网页分析</span></a>
+      <div class="text-xs text-gray-400 px-3 py-2 mt-4">案例展示</div>
+      <a href="cases.html#document" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg><span>文档案例</span></a>
+      <a href="cases.html#image" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg><span>图片案例</span></a>
+      <a href="cases.html#video" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg><span>视频案例</span></a>
+      <a href="cases.html#website" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg><span>网页案例</span></a>
+      <div class="text-xs text-gray-400 px-3 py-2 mt-4">个人中心</div>
+      <a href="#" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span>历史记录</span></a>
+      <a href="#" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg><span>设置</span></a>
+    </nav>
+    <div class="p-4 border-t border-gray-200">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center"><span class="text-xs text-gray-500">U</span></div>
+        <div class="flex-1 min-w-0"><p class="text-sm text-gray-700 truncate">用户名</p><p class="text-xs text-gray-400">免费用户</p></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 主内容区 -->
+  <div class="main-content">
+    <nav class="h-14 border-b border-gray-200 flex items-center justify-between px-8 bg-white sticky top-0 z-10">
+      <div class="flex items-center gap-6">
+        <a href="#" class="text-sm text-gray-800 font-medium">首页</a>
+        <a href="#" class="text-sm text-gray-500">定价</a>
+        <a href="#" class="text-sm text-gray-500">关于</a>
+      </div>
+      <div class="flex items-center gap-2.5">
+        <div class="moon-container"><div class="moon-base"></div><div class="moon-shadow"></div></div>
+        <h1 class="text-base font-semibold text-gray-800">最好的学习从模仿开始</h1>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+          <button class="lang-btn active px-3 py-1 rounded text-xs font-medium" data-lang="zh">中文</button>
+          <button class="lang-btn px-3 py-1 rounded text-xs text-gray-500" data-lang="en">EN</button>
+        </div>
+        <button class="text-sm text-gray-500 hover:text-gray-800">登录</button>
+        <button class="btn-primary px-4 py-1.5 rounded text-sm text-white">注册</button>
+      </div>
+    </nav>
+
+    <!-- 固定副标题区域 -->
+    <div class="fixed-header">
+      <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-3"><p class="text-gray-500 text-sm">上传你喜欢的内容，提炼有效提示词，让美好可以复刻迭代</p></div>
+        <div class="flex gap-2 justify-center">
+          <button class="category-btn px-4 py-1.5 rounded-lg text-sm font-medium bg-white text-gray-800 border border-gray-600 shadow-sm flex items-center gap-2" data-type="document"><span class="moon-icon moon-95"></span><span>文档</span></button>
+          <button class="category-btn px-4 py-1.5 rounded-lg text-sm text-gray-500 bg-white border border-gray-200 flex items-center gap-2" data-type="image"><span class="moon-icon moon-70"></span><span>图片</span></button>
+          <button class="category-btn px-4 py-1.5 rounded-lg text-sm text-gray-500 bg-white border border-gray-200 flex items-center gap-2" data-type="video"><span class="moon-icon moon-40"></span><span>视频</span></button>
+          <button class="category-btn px-4 py-1.5 rounded-lg text-sm text-gray-500 bg-white border border-gray-200 flex items-center gap-2" data-type="website"><span class="moon-icon moon-full"></span><span>网页</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-6 max-w-4xl mx-auto pt-28">
+      <div id="messageArea" class="hidden"></div>
+      
+      <!-- AI输出过程展示框（移到文件拖拽区上方） -->
+      <div class="ai-output-panel" id="aiOutputPanel">
+        <div class="ai-output-header">
+          <div class="ai-output-status">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="statusText">等待上传</span>
+          </div>
+          <button class="text-sm text-gray-600 hover:text-gray-800 flex items-center gap-1" id="copyBtn">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            <span>一键复制</span>
+          </button>
+        </div>
+        <div class="ai-output-process" id="aiProcessArea">
+          <div class="process-step" id="processStep">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span>准备就绪，等待上传文件...</span>
+          </div>
+        </div>
+        <div class="ai-output-result" id="aiResultArea">
+          <p class="text-gray-400 text-sm text-center">上传内容后点击"开始分析提炼"生成提示词</p>
+        </div>
+      </div>
+      
+      <!-- 文件拖拽区（上下更窄） -->
+      <div class="upload-zone rounded-xl py-3 px-4 text-center cursor-pointer mb-4" id="uploadZone">
+        <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-1.5">
+          <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+        </div>
+        <p class="text-gray-600 text-sm mb-0.5">拖放文件到此处</p>
+        <p class="text-gray-400 text-xs" id="fileHint">支持 Word/PDF/TXT/Markdown</p>
+      </div>
+      
+      <!-- 文件上传 + 模型选择 + 开始分析 -->
+      <div class="flex gap-3 mb-6 items-center flex-wrap">
+        <input type="file" id="fileInput" class="hidden">
+        <button onclick="document.getElementById('fileInput').click()" class="btn-secondary flex-1 py-2.5 rounded-xl text-sm text-gray-600 font-medium shadow-sm">📁 选择文件上传</button>
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-gray-500">模型选择：</span>
+          <select id="modelSelect" class="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-gray-400 min-w-[140px]">
+            <option value="auto">🤖 自动选择</option>
+            <optgroup label="国内模型"><option value="hunyuan-lite">混元 Lite</option><option value="hunyuan-pro">混元 Pro</option><option value="qwen">通义千问</option></optgroup>
+            <optgroup label="International"><option value="gpt4">GPT-4o</option><option value="claude">Claude 3.5</option></optgroup>
+          </select>
+        </div>
+        <button class="btn-primary px-6 py-2.5 rounded-xl text-white font-medium shadow-sm" id="analyzeBtn">🔍 开始分析提炼</button>
+      </div>
+      
+      <!-- 输出选项 -->
+      <div class="mb-5 flex items-center gap-3 flex-wrap">
+        <h3 class="text-sm font-medium text-gray-600">希望输出的内容（可多选）</h3>
+        <div id="documentOptions" class="flex items-center gap-1 flex-wrap">
+          <span class="option-tag selected" data-value="prompt"><span class="dot"></span>提示词</span>
+          <span class="option-tag" data-value="outline"><span class="dot"></span>大纲梗概</span>
+          <span class="option-tag" data-value="structure"><span class="dot"></span>结构分析</span>
+          <span class="option-tag" data-value="keywords"><span class="dot"></span>关键词</span>
+        </div>
+        <div id="imageOptions" class="hidden flex items-center gap-1 flex-wrap">
+          <span class="option-tag selected" data-value="prompt"><span class="dot"></span>提示词</span>
+          <span class="option-tag" data-value="style"><span class="dot"></span>风格描述</span>
+          <span class="option-tag" data-value="colors"><span class="dot"></span>配色方案</span>
+          <span class="option-tag" data-value="params"><span class="dot"></span>参数建议</span>
+        </div>
+        <div id="videoOptions" class="hidden flex items-center gap-1 flex-wrap">
+          <span class="option-tag selected" data-value="prompt"><span class="dot"></span>提示词</span>
+          <span class="option-tag" data-value="storyboard"><span class="dot"></span>分镜脚本</span>
+          <span class="option-tag" data-value="pacing"><span class="dot"></span>节奏分析</span>
+          <span class="option-tag" data-value="tools"><span class="dot"></span>推荐工具</span>
+        </div>
+        <div id="websiteOptions" class="hidden flex items-center gap-1 flex-wrap">
+          <span class="option-tag selected" data-value="prompt"><span class="dot"></span>提示词</span>
+          <span class="option-tag" data-value="features"><span class="dot"></span>功能列表</span>
+          <span class="option-tag" data-value="mvp"><span class="dot"></span>MVP文档</span>
+          <span class="option-tag" data-value="tech"><span class="dot"></span>技术栈</span>
+        </div>
+      </div>
+      
+      <!-- 用户编辑区 -->
+      <div class="mb-5">
+        <h3 class="text-sm font-medium text-gray-600 mb-2">编辑修改（可选）</h3>
+        <textarea class="w-full h-24 bg-white border border-gray-200 rounded-xl p-3 text-sm text-gray-600 placeholder-gray-400 focus:outline-none focus:border-gray-400" placeholder="在这里修改提示词或添加你的想法..." id="editorArea"></textarea>
+      </div>
+      
+      <!-- 模拟输出 + 模型选择 -->
+      <div class="flex gap-3 mb-6 items-center flex-wrap">
+        <button class="btn-secondary py-2.5 px-5 rounded-xl text-sm text-gray-600 font-medium shadow-sm flex items-center gap-2" id="previewBtn"><span class="moon-icon moon-70"></span>模拟输出预览</button>
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-gray-500">模型选择：</span>
+          <select id="modelSelect2" class="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-gray-400 min-w-[140px]">
+            <option value="auto">🤖 自动选择</option>
+            <optgroup label="国内模型"><option value="hunyuan-lite">混元 Lite</option><option value="hunyuan-pro">混元 Pro</option></optgroup>
+            <optgroup label="International"><option value="gpt4">GPT-4o</option><option value="claude">Claude 3.5</option></optgroup>
+          </select>
+        </div>
+        <div id="imageCount" class="hidden items-center gap-2">
+          <span class="text-sm text-gray-500">生成数量：</span>
+          <select class="bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 focus:outline-none focus:border-gray-400"><option>1张</option><option>2张</option><option>4张</option></select>
+        </div>
+      </div>
+      
+      <!-- 预览区 -->
+      <div class="mb-4">
+        <h3 class="text-sm font-medium text-gray-600 mb-2">预览</h3>
+        <div class="output-card rounded-xl p-4 min-h-[120px] shadow-sm">
+          <div id="imagePreview" class="hidden grid grid-cols-2 gap-3">
+            <div class="aspect-square bg-gray-100 rounded-lg flex items-center justify-center"><span class="text-gray-400 text-xs">图片 1</span></div>
+            <div class="aspect-square bg-gray-100 rounded-lg flex items-center justify-center"><span class="text-gray-400 text-xs">图片 2</span></div>
+          </div>
+          <div id="videoPreview" class="hidden"><div class="aspect-video bg-gray-100 rounded-lg flex items-center justify-center"><span class="text-gray-400 text-xs">视频预览区</span></div></div>
+          <div id="textPreview" class="text-gray-600 text-sm"><p class="text-gray-400 text-xs">预览结果将显示在这里...</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE_URL = 'http://124.156.200.127:3001';
+    let currentLang = 'zh', currentType = 'document', isLoading = false, uploadedContent = '', uploadedFile = null;
+    
+    function showMessage(message, type = 'info') {
+      const area = document.getElementById('messageArea');
+      area.className = type === 'error' ? 'error-message' : 'success-message';
+      area.textContent = message;
+      area.classList.remove('hidden');
+      setTimeout(() => area.classList.add('hidden'), 5000);
+    }
+    
+    function updateStatus(status, text) {
+      const dot = document.getElementById('statusDot');
+      const statusText = document.getElementById('statusText');
+      dot.className = 'status-dot';
+      if (status === 'processing') dot.classList.add('processing');
+      else if (status === 'success') dot.classList.add('success');
+      else if (status === 'error') dot.classList.add('error');
+      statusText.textContent = text;
+    }
+    
+    function updateProcess(step, status, text) {
+      const processArea = document.getElementById('aiProcessArea');
+      let icon = '';
+      if (status === 'processing') icon = '<div class="spinner"></div>';
+      else if (status === 'done') icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>';
+      else if (status === 'error') icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
+      else icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
+      processArea.innerHTML = `<div class="process-step ${status}">${icon}<span>${text}</span></div>`;
+    }
+    
+    function getSelectedOptions() {
+      const container = document.getElementById(currentType + 'Options');
+      const selected = container.querySelectorAll('.option-tag.selected');
+      return Array.from(selected).map(el => el.dataset.value);
+    }
+    
+    function formatPromptResult(text) {
+      const sections = text.split(/##\s*/).filter(s => s.trim());
+      let html = '';
+      sections.forEach(section => {
+        const lines = section.trim().split('\n');
+        if (lines.length === 0) return;
+        const title = lines[0].trim();
+        const content = lines.slice(1).join('\n').trim();
+        if (!title) return;
+        let blockClass = 'prompt-block';
+        const titleLower = title.toLowerCase();
+        if (titleLower.includes('workflow')) blockClass += ' workflow';
+        else if (titleLower.includes('example')) blockClass += ' examples';
+        else if (titleLower.includes('initialization') || titleLower.includes('初始化')) blockClass += ' init';
+        html += `<div class="${blockClass}"><div class="prompt-label">${title}</div><div class="prompt-content">${content.replace(/\n/g, '<br>')}</div></div>`;
+      });
+      return html || `<div class="prompt-block"><div class="prompt-content">${text.replace(/\n/g, '<br>')}</div></div>`;
+    }
+    
+    async function analyzeContent() {
+      if (!uploadedContent && !uploadedFile) { showMessage('请先上传文件或输入内容', 'error'); return; }
+      const btn = document.getElementById('analyzeBtn');
+      btn.classList.remove('btn-primary');
+      btn.classList.add('btn-loading');
+      btn.innerHTML = '<span class="inline-flex items-center gap-2">⏳ 正在努力生成<span class="animate-pulse">...</span></span>';
+      updateStatus('processing', '分析中...');
+      updateProcess(1, 'processing', '正在读取文件内容...');
+      try {
+        const formData = new FormData();
+        if (uploadedFile) {
+          formData.append('file', uploadedFile);
+          formData.append('category', currentType);
+          formData.append('outputOptions', JSON.stringify(getSelectedOptions()));
+          updateProcess(2, 'processing', '正在调用AI模型分析...');
+          const response = await fetch(`${API_BASE_URL}/api/analyze/file`, { method: 'POST', body: formData });
+          const data = await response.json();
+          if (data.success) {
+            updateProcess(3, 'done', '分析完成！');
+            updateStatus('success', '分析完成');
+            document.getElementById('aiResultArea').innerHTML = formatPromptResult(data.result);
+            showMessage('分析完成！');
+          } else {
+            updateProcess(3, 'error', data.error || '分析失败');
+            updateStatus('error', '分析失败');
+            showMessage(data.error || '分析失败', 'error');
+          }
+        } else {
+          const response = await fetch(`${API_BASE_URL}/api/analyze/text`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: uploadedContent, category: currentType, outputOptions: getSelectedOptions() })
+          });
+          const data = await response.json();
+          if (data.success) {
+            updateProcess(3, 'done', '分析完成！');
+            updateStatus('success', '分析完成');
+            document.getElementById('aiResultArea').innerHTML = formatPromptResult(data.result);
+            showMessage('分析完成！');
+          } else {
+            updateProcess(3, 'error', data.error || '分析失败');
+            updateStatus('error', '分析失败');
+            showMessage(data.error || '分析失败', 'error');
+          }
+        }
+      } catch (error) {
+        console.error('API Error:', error);
+        updateProcess(3, 'error', '网络错误');
+        updateStatus('error', '网络错误');
+        showMessage('网络错误，请检查API服务', 'error');
+      } finally {
+        btn.classList.remove('btn-loading');
+        btn.classList.add('btn-primary');
+        btn.innerHTML = '🔍 开始分析提炼';
+      }
+    }
+    
+    async function previewOutput() {
+      const resultText = document.getElementById('aiResultArea').innerText;
+      if (!resultText || resultText.includes('上传内容后')) { showMessage('请先分析内容生成提示词', 'error'); return; }
+      const btn = document.getElementById('previewBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="animate-pulse">生成中...</span>';
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/preview`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: resultText })
+        });
+        const data = await response.json();
+        if (data.success) {
+          document.getElementById('textPreview').innerHTML = `<div class="whitespace-pre-wrap">${data.preview}</div>`;
+          showMessage('预览生成完成！');
+        } else { showMessage(data.error || '预览生成失败', 'error'); }
+      } catch (error) { showMessage('网络错误', 'error'); }
+      finally { btn.disabled = false; btn.innerHTML = '<span class="moon-icon moon-70"></span> 模拟输出预览'; }
+    }
+    
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        currentLang = this.dataset.lang;
+      });
+    });
+    
+    const categoryBtns = document.querySelectorAll('.category-btn');
+    const optionGroups = { document: 'documentOptions', image: 'imageOptions', video: 'videoOptions', website: 'websiteOptions' };
+    const hints = { document: '支持 Word/PDF/TXT/Markdown', image: '支持 JPG/PNG/WebP/GIF', video: '支持 MP4/MOV，≤30秒', website: '支持 URL/网页截图' };
+    categoryBtns.forEach(btn => {
+      btn.addEventListener('click', function() {
+        categoryBtns.forEach(b => { b.classList.remove('bg-white', 'text-gray-800', 'border-gray-600', 'shadow-sm'); b.classList.add('text-gray-500', 'border-gray-200'); });
+        this.classList.remove('text-gray-500', 'border-gray-200');
+        this.classList.add('bg-white', 'text-gray-800', 'border-gray-600', 'shadow-sm');
+        currentType = this.dataset.type;
+        Object.values(optionGroups).forEach(id => document.getElementById(id).classList.add('hidden'));
+        document.getElementById(optionGroups[currentType]).classList.remove('hidden');
+        document.getElementById('fileHint').textContent = hints[currentType];
+        document.getElementById('imagePreview').classList.add('hidden');
+        document.getElementById('videoPreview').classList.add('hidden');
+        document.getElementById('textPreview').classList.add('hidden');
+        document.getElementById('imageCount').classList.add('hidden');
+        if (currentType === 'image') { document.getElementById('imagePreview').classList.remove('hidden'); document.getElementById('imageCount').classList.remove('hidden'); document.getElementById('imageCount').classList.add('flex'); }
+        else if (currentType === 'video') { document.getElementById('videoPreview').classList.remove('hidden'); }
+        else { document.getElementById('textPreview').classList.remove('hidden'); }
+      });
+    });
+    
+    document.querySelectorAll('.option-tag').forEach(tag => { tag.addEventListener('click', function() { this.classList.toggle('selected'); }); });
+    
+    const fileInput = document.getElementById('fileInput');
+    const uploadZone = document.getElementById('uploadZone');
+    fileInput.addEventListener('change', function(e) {
+      if (e.target.files.length > 0) {
+        uploadedFile = e.target.files[0];
+        uploadedContent = '';
+        showMessage(`已选择文件: ${uploadedFile.name}`);
+        updateStatus('processing', '文件已上传');
+        updateProcess(1, 'done', `已选择文件: ${uploadedFile.name}`);
+      }
+    });
+    
+    uploadZone.addEventListener('dragover', function(e) { e.preventDefault(); this.classList.add('dragover'); });
+    uploadZone.addEventListener('dragleave', function() { this.classList.remove('dragover'); });
+    uploadZone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      this.classList.remove('dragover');
+      if (e.dataTransfer.files.length > 0) {
+        uploadedFile = e.dataTransfer.files[0];
+        uploadedContent = '';
+        showMessage(`已上传文件: ${uploadedFile.name}`);
+        updateStatus('processing', '文件已上传');
+        updateProcess(1, 'done', `已上传文件: ${uploadedFile.name}`);
+      }
+    });
+    uploadZone.addEventListener('click', function() { fileInput.click(); });
+    document.getElementById('analyzeBtn').addEventListener('click', analyzeContent);
+    document.getElementById('previewBtn').addEventListener('click', previewOutput);
+    
+    document.getElementById('copyBtn').addEventListener('click', function() {
+      const resultArea = document.getElementById('aiResultArea');
+      navigator.clipboard.writeText(resultArea.innerText).then(() => {
+        const originalText = this.innerHTML;
+        this.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg><span>已复制</span>';
+        this.classList.remove('text-gray-600');
+        this.classList.add('text-green-600');
+        setTimeout(() => { this.innerHTML = originalText; this.classList.remove('text-green-600'); this.classList.add('text-gray-600'); }, 2000);
+      });
+    });
+  </script>
+</body>
+</html>

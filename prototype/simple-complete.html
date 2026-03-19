@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediaPrompt AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+    body { background: #f5f5f7; min-height: 100vh; }
+    .sidebar { background: #ffffff; border-right: 1px solid #e5e5e5; position: fixed; top: 0; left: 0; height: 100vh; z-index: 20; width: 208px; }
+    .main-content { margin-left: 208px; min-height: 100vh; }
+    .nav-item { padding: 12px 20px; cursor: pointer; transition: all 0.15s; }
+    .nav-item:hover { background: #f5f5f7; }
+    .nav-item.active { background: #e8e8ed; }
+    .upload-zone { background: #ffffff; border: 2px dashed #d1d1d6; padding: 32px; text-align: center; transition: all 0.2s; cursor: pointer; }
+    .upload-zone:hover { border-color: #52525b; background: #fafafa; }
+    .btn-primary { background: #52525b; color: white; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+    .btn-primary:hover { background: #3f3f46; }
+    .btn-secondary { background: #ffffff; border: 1px solid #d1d1d6; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+    .btn-secondary:hover { background: #f5f5f7; }
+    .output-card { background: #ffffff; border: 1px solid #e5e5e5; padding: 16px; border-radius: 12px; }
+    .prompt-block { background: #fafafa; border-left: 3px solid #52525b; padding: 8px 12px; margin-bottom: 8px; border-radius: 0 6px 6px 0; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <!-- 左侧导航 -->
+  <div class="sidebar">
+    <div class="p-4 border-b border-gray-200">
+      <h2 class="font-semibold text-gray-800">MediaPrompt AI</h2>
+    </div>
+    <nav>
+      <div class="text-xs text-gray-400 px-4 py-2">分析工具</div>
+      <div class="nav-item active" onclick="clickNav(this, 'doc')">📄 文档分析</div>
+      <div class="nav-item" onclick="clickNav(this, 'image')">🖼️ 图片分析</div>
+      <div class="nav-item" onclick="clickNav(this, 'video')">🎬 视频分析</div>
+      <div class="nav-item" onclick="clickNav(this, 'web')">🌐 网页分析</div>
+      <div class="text-xs text-gray-400 px-4 py-2 mt-4">案例展示</div>
+      <div class="nav-item">📁 文档案例</div>
+      <div class="nav-item">🖼️ 图片案例</div>
+      <div class="nav-item">🎬 视频案例</div>
+      <div class="nav-item">🌐 网页案例</div>
+      <div class="text-xs text-gray-400 px-4 py-2 mt-4">个人中心</div>
+      <div class="nav-item">📜 历史记录</div>
+      <div class="nav-item">⚙️ 设置</div>
+    </nav>
+    <div class="absolute bottom-0 w-full p-4 border-t border-gray-200">
+      <p class="text-sm font-medium">用户名</p>
+      <p class="text-xs text-gray-500">免费用户</p>
+    </div>
+  </div>
+
+  <!-- 主内容 -->
+  <div class="main-content p-6">
+    <!-- 顶部导航 -->
+    <nav class="flex items-center justify-between h-14 bg-white border-b border-gray-200 px-6 mb-4">
+      <div class="text-xl font-bold">MediaPrompt AI</div>
+      <div class="flex items-center gap-4">
+        <!-- 语言切换 -->
+        <button id="btnZh" class="px-3 py-1 rounded text-xs font-medium bg-gray-800 text-white" onclick="setLang('zh')">中文</button>
+        <button id="btnEn" class="px-3 py-1 rounded text-xs text-gray-500" onclick="setLang('en')">EN</button>
+        <span class="text-sm text-gray-500 cursor-pointer">登录</span>
+        <button class="btn-primary text-sm">注册</button>
+      </div>
+    </nav>
+
+    <!-- 副标题区域 -->
+    <div class="bg-white border-b border-gray-200 px-6 py-3 mb-6">
+      <p class="text-sm text-gray-500 text-center mb-3" id="subtitle">上传你喜欢的内容，提炼有效提示词，让美好可以复刻迭代</p>
+      <div class="flex gap-2 justify-center">
+        <button id="btnDoc" class="px-4 py-1.5 rounded-lg text-sm font-medium bg-white text-gray-800 border border-gray-600 shadow" onclick="setCategory('document')">📄 文档</button>
+        <button id="btnImg" class="px-4 py-1.5 rounded-lg text-sm text-gray-500 bg-white border border-gray-200" onclick="setCategory('image')">🖼️ 图片</button>
+        <button id="btnVid" class="px-4 py-1.5 rounded-lg text-sm text-gray-500 bg-white border border-gray-200" onclick="setCategory('video')">🎬 视频</button>
+        <button id="btnWeb" class="px-4 py-1.5 rounded-lg text-sm text-gray-500 bg-white border border-gray-200" onclick="setCategory('website')">🌐 网页</button>
+      </div>
+    </div>
+
+    <!-- 消息提示 -->
+    <div id="messageArea" class="hidden mb-4 p-3 rounded-lg text-sm"></div>
+
+    <!-- 上传区域 -->
+    <div class="upload-zone mb-6" onclick="document.getElementById('fileInput').click()">
+      <p class="text-gray-600 mb-2" id="uploadText">拖拽文件到此处，或点击上传</p>
+      <p class="text-gray-400 text-xs" id="fileHint">支持 Word/PDF/TXT/Markdown</p>
+      <input type="file" id="fileInput" class="hidden" onchange="handleFile(this)">
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="flex gap-3 mb-6">
+      <button class="btn-secondary" onclick="startAnalyze()">开始分析提炼</button>
+      <button class="btn-secondary" onclick="previewOutput()">✨ 创意类似+</button>
+    </div>
+
+    <!-- 输出选项 -->
+    <div class="mb-6">
+      <h3 class="text-sm font-medium text-gray-600 mb-2">输出选项</h3>
+      <div id="docOptions" class="flex gap-2 flex-wrap">
+        <span class="option-tag px-3 py-1 rounded-full text-sm bg-white border border-gray-200 cursor-pointer selected" onclick="toggleOption(this)">提示词整合</span>
+        <span class="option-tag px-3 py-1 rounded-full text-sm bg-white border border-gray-200 cursor-pointer" onclick="toggleOption(this)">功能列表</span>
+        <span class="option-tag px-3 py-1 rounded-full text-sm bg-white border border-gray-200 cursor-pointer" onclick="toggleOption(this)">MVP文档</span>
+        <span class="option-tag px-3 py-1 rounded-full text-sm bg-white border border-gray-200 cursor-pointer" onclick="toggleOption(this)">技术栈</span>
+      </div>
+      <div id="imageOptions" class="hidden flex gap-2 flex-wrap">
+        <span class="option-tag px-3 py-1 rounded-full text-sm bg-white border border-gray-200 cursor-pointer selected" onclick="toggleOption(this)">提示词整合</span>
+        <span class="option-tag px-3 py-1 rounded-full text-sm bg-white border border-gray-200 cursor-pointer" onclick="toggleOption(this)">场景描述</span>
+        <span class="option-tag px-3 py-1 rounded-full text-sm bg-white border border-gray-200 cursor-pointer" onclick="toggleOption(this)">风格设定</span>
+        <span class="option-tag px-3 py-1 rounded-full text-sm bg-white border border-gray-200 cursor-pointer" onclick="toggleOption(this)">光线与氛围</span>
+      </div>
+      <div id="videoOptions" class="hidden flex gap-2 flex-wrap">
+        <span class="option-tag px-3 py-1 rounded-full text-sm bg-white border border-gray-200 cursor-pointer selected" onclick="toggleOption(this)">提示词整合</span>
+        <span class="option-tag px-3 py-1 rounded-full text-sm bg-white border border-gray-200 cursor-pointer" onclick="toggleOption(this)">场景描述</span>
+        <span class="option-tag px-3 py-1 rounded-full text-sm bg-white border border-gray-200 cursor-pointer" onclick="toggleOption(this)">风格</span>
+        <span class="option-tag px-3 py-1 rounded-full text-sm bg-white border border-gray-200 cursor-pointer" onclick="toggleOption(this)">光影</span>
+        <span class="option-tag px-3 py-1 rounded-full text-sm bg-white border border-gray-200 cursor-pointer" onclick="toggleOption(this)">🎙️ 同期AI配音</span>
+      </div>
+      <div id="websiteOptions" class="hidden flex gap-2 flex-wrap">
+        <span class="option-tag px-3 py-1 rounded-full text-sm bg-white border border-gray-200 cursor-pointer selected" onclick="toggleOption(this)">提示词整合</span>
+        <span class="option-tag px-3 py-1 rounded-full text-sm bg-white border border-gray-200 cursor-pointer" onclick="toggleOption(this)">功能列表</span>
+        <span class="option-tag px-3 py-1 rounded-full text-sm bg-white border border-gray-200 cursor-pointer" onclick="toggleOption(this)">MVP文档</span>
+      </div>
+    </div>
+
+    <!-- 视频专属区域 -->
+    <div id="videoSection" class="hidden mb-6 p-4 bg-white rounded-xl border border-gray-200">
+      <h3 class="text-sm font-medium text-gray-600 mb-3">🎬 视频专属选项</h3>
+      <div class="mb-3">
+        <span class="text-sm text-gray-500 mr-2">📐 视频尺寸:</span>
+        <button class="px-3 py-1 rounded text-xs bg-white border border-gray-600 shadow mr-1" onclick="setAspect('16:9', this)">16:9</button>
+        <button class="px-3 py-1 rounded text-xs bg-white border border-gray-200 mr-1" onclick="setAspect('9:16', this)">9:16</button>
+        <button class="px-3 py-1 rounded text-xs bg-white border border-gray-200 mr-1" onclick="setAspect('4:3', this)">4:3</button>
+        <button class="px-3 py-1 rounded text-xs bg-white border border-gray-200 mr-1" onclick="setAspect('1:1', this)">1:1</button>
+      </div>
+      <div>
+        <span class="text-sm text-gray-500 mr-2">🎙️ 同期AI配音:</span>
+        <input type="text" id="voiceInput" class="w-full mt-2 px-4 py-2 border border-gray-200 rounded-lg text-sm" placeholder="输入配音文字，支持多种风格：专业解说、故事叙述、情感表达、活力四射...">
+      </div>
+    </div>
+
+    <!-- 编辑区域 -->
+    <div class="mb-6">
+      <h3 class="text-sm font-medium text-gray-600 mb-2">编辑自己的提示词</h3>
+      <textarea id="editorArea" class="w-full h-24 border border-gray-200 rounded-xl p-3 text-sm" placeholder="在这里编辑提示词，或使用上方AI生成的提示词..."></textarea>
+    </div>
+
+    <!-- 预览区 -->
+    <div class="mb-6">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-sm font-medium text-gray-600">✨ 创意类似+</h3>
+        <div class="flex items-center gap-2">
+          <!-- 社交媒体 -->
+          <button class="w-9 h-9 rounded-full flex items-center justify-center" style="background:#07C160" onclick="shareTo('wechat')" title="微信">
+            <span class="text-white text-xs">微</span>
+          </button>
+          <button class="w-9 h-9 rounded-full flex items-center justify-center" style="background:#000" onclick="shareTo('douyin')" title="抖音">
+            <span class="text-white text-xs">抖</span>
+          </button>
+          <button class="w-9 h-9 rounded-full flex items-center justify-center" style="background:#FF2442" onclick="shareTo('xiaohongshu')" title="小红书">
+            <span class="text-white text-xs">小</span>
+          </button>
+          <button class="w-9 h-9 rounded-full flex items-center justify-center" style="background:#E6162D" onclick="shareTo('weibo')" title="微博">
+            <span class="text-white text-xs">微</span>
+          </button>
+          <div class="w-px h-6 bg-gray-300 mx-1"></div>
+          <button class="px-3 py-1.5 bg-gray-800 text-white text-xs rounded" onclick="downloadResult()">⬇️ 下载</button>
+        </div>
+      </div>
+      <div class="output-card min-h-[120px]">
+        <p id="previewText" class="text-gray-400 text-sm">预览结果将显示在这里...</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var currentLang = 'zh';
+    var currentType = 'document';
+    var uploadedFile = null;
+    
+    // 语言切换
+    function setLang(lang) {
+      currentLang = lang;
+      document.getElementById('btnZh').className = lang === 'zh' ? 'px-3 py-1 rounded text-xs font-medium bg-gray-800 text-white' : 'px-3 py-1 rounded text-xs text-gray-500';
+      document.getElementById('btnEn').className = lang === 'en' ? 'px-3 py-1 rounded text-xs font-medium bg-gray-800 text-white' : 'px-3 py-1 rounded text-xs text-gray-500';
+      
+      if (lang === 'zh') {
+        document.getElementById('subtitle').textContent = '上传你喜欢的内容，提炼有效提示词，让美好可以复刻迭代';
+        document.getElementById('uploadText').textContent = '拖拽文件到此处，或点击上传';
+        document.getElementById('fileHint').textContent = '支持 Word/PDF/TXT/Markdown';
+        document.getElementById('previewText').textContent = '预览结果将显示在这里...';
+      } else {
+        document.getElementById('subtitle').textContent = 'Upload content you like, extract effective prompts, make excellence replicable';
+        document.getElementById('uploadText').textContent = 'Drag file here, or click to upload';
+        document.getElementById('fileHint').textContent = 'Support Word/PDF/TXT/Markdown';
+        document.getElementById('previewText').textContent = 'Preview results will appear here...';
+      }
+    }
+    
+    // 类别切换
+    function setCategory(type) {
+      currentType = type;
+      
+      // 按钮样式
+      var btns = { document: 'btnDoc', image: 'btnImg', video: 'btnVid', website: 'btnWeb' };
+      Object.keys(btns).forEach(function(key) {
+        var btn = document.getElementById(btns[key]);
+        if (key === type) {
+          btn.className = 'px-4 py-1.5 rounded-lg text-sm font-medium bg-white text-gray-800 border border-gray-600 shadow';
+        } else {
+          btn.className = 'px-4 py-1.5 rounded-lg text-sm text-gray-500 bg-white border border-gray-200';
+        }
+      });
+      
+      // 显示对应选项
+      var options = { document: 'docOptions', image: 'imageOptions', video: 'videoOptions', website: 'websiteOptions' };
+      Object.keys(options).forEach(function(key) {
+        var el = document.getElementById(options[key]);
+        if (key === type) {
+          el.classList.remove('hidden');
+        } else {
+          el.classList.add('hidden');
+        }
+      });
+      
+      // 文件提示
+      var hints = { 
+        document: { zh: '支持 Word/PDF/TXT/Markdown', en: 'Support Word/PDF/TXT/Markdown' },
+        image: { zh: '支持 JPG/PNG/WebP/GIF', en: 'Support JPG/PNG/WebP/GIF' },
+        video: { zh: '支持 MP4/MOV，建议30秒内', en: 'Support MP4/MOV, within 30 seconds' },
+        website: { zh: '支持 URL/网页截图', en: 'Support URL/Screenshot' }
+      };
+      document.getElementById('fileHint').textContent = hints[type][currentLang];
+      
+      // 视频专属区域
+      var videoSection = document.getElementById('videoSection');
+      if (type === 'video') {
+        videoSection.classList.remove('hidden');
+      } else {
+        videoSection.classList.add('hidden');
+      }
+    }
+    
+    // 点击导航
+    function clickNav(el, type) {
+      document.querySelectorAll('.nav-item').forEach(function(item) {
+        item.classList.remove('active');
+      });
+      el.classList.add('active');
+      setCategory(type);
+    }
+    
+    // 选项切换
+    function toggleOption(el) {
+      el.classList.toggle('selected');
+      if (el.classList.contains('selected')) {
+        el.classList.remove('bg-white', 'border-gray-200');
+        el.classList.add('bg-gray-100', 'border-gray-400');
+      } else {
+        el.classList.remove('bg-gray-100', 'border-gray-400');
+        el.classList.add('bg-white', 'border-gray-200');
+      }
+    }
+    
+    // 视频尺寸
+    function setAspect(aspect, el) {
+      var buttons = el.parentElement.querySelectorAll('button');
+      buttons.forEach(function(btn) {
+        btn.classList.remove('border-gray-600', 'shadow');
+        btn.classList.add('border-gray-200');
+      });
+      el.classList.remove('border-gray-200');
+      el.classList.add('border-gray-600', 'shadow');
+    }
+    
+    // 文件处理
+    function handleFile(input) {
+      if (input.files.length > 0) {
+        uploadedFile = input.files[0];
+        showMessage('已上传: ' + uploadedFile.name);
+      }
+    }
+    
+    // 消息提示
+    function showMessage(msg) {
+      var area = document.getElementById('messageArea');
+      area.textContent = msg;
+      area.className = 'mb-4 p-3 rounded-lg text-sm bg-gray-100 text-gray-700';
+      setTimeout(function() {
+        area.className = 'hidden';
+      }, 3000);
+    }
+    
+    // 开始分析
+    function startAnalyze() {
+      if (!uploadedFile) {
+        showMessage('请先上传文件');
+        return;
+      }
+      document.getElementById('previewText').textContent = currentLang === 'zh' ? 'AI正在分析中...' : 'AI is analyzing...';
+    }
+    
+    // 预览
+    function previewOutput() {
+      document.getElementById('previewText').textContent = '这是模拟输出结果。\n\n提示词：\n1. 场景描述\n2. 风格设定\n3. 光线与氛围\n4. 主体与动作';
+    }
+    
+    // 分享
+    function shareTo(platform) {
+      var names = { wechat: '微信', douyin: '抖音', xiaohongshu: '小红书', weibo: '微博' };
+      showMessage('分享到: ' + names[platform]);
+    }
+    
+    // 下载
+    function downloadResult() {
+      var content = document.getElementById('previewText').textContent;
+      if (content.includes('预览结果')) {
+        showMessage('暂无内容可下载');
+        return;
+      }
+      var blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'mediaprompt-result.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showMessage('下载成功');
+    }
+  </script>
+</body>
+</html>

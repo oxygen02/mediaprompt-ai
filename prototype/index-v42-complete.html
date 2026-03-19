@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediaPrompt AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+    body { background: #f5f5f7; min-height: 100vh; }
+    .sidebar { background: #ffffff; border-right: 1px solid #e5e5e5; position: fixed; top: 0; left: 0; height: 100vh; z-index: 20; width: 208px; }
+    .main-content { margin-left: 208px; min-height: 100vh; }
+    .nav-item { padding: 12px 20px; cursor: pointer; transition: all 0.15s; }
+    .nav-item:hover { background: #f5f5f7; }
+    .nav-item.active { background: #e8e8ed; }
+    .upload-zone { background: #ffffff; border: 2px dashed #d1d1d6; padding: 32px; text-align: center; transition: all 0.2s; cursor: pointer; }
+    .upload-zone:hover { border-color: #52525b; background: #fafafa; }
+    .btn-primary { background: #52525b; color: white; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+    .btn-primary:hover { background: #3f3f46; }
+    .output-card { background: #ffffff; border: 1px solid #e5e5e5; padding: 16px; border-radius: 12px; }
+    .prompt-block { background: #fafafa; border-left: 3px solid #52525b; padding: 8px 12px; margin-bottom: 8px; border-radius: 0 6px 6px 0; }
+    .hidden { display: none !important; }
+    .tag-selected { background: #e4e4e7; border-color: #71717a; }
+    .btn-active { background: #52525b; color: white; }
+    .btn-inactive { background: white; color: #71717a; border: 1px solid #e5e5e5; }
+  </style>
+</head>
+<body>
+  <!-- 左侧导航 -->
+  <div class="sidebar">
+    <div class="p-4 border-b border-gray-200">
+      <h2 class="font-semibold text-gray-800">MediaPrompt AI</h2>
+    </div>
+    <nav>
+      <div class="text-xs text-gray-400 px-4 py-2">分析工具</div>
+      <div class="nav-item active" id="navDoc" onclick="switchNav(this)">📄 文档分析</div>
+      <div class="nav-item" id="navImg" onclick="switchNav(this)">🖼️ 图片分析</div>
+      <div class="nav-item" id="navVid" onclick="switchNav(this)">🎬 视频分析</div>
+      <div class="nav-item" id="navWeb" onclick="switchNav(this)">🌐 网页分析</div>
+      <div class="text-xs text-gray-400 px-4 py-2 mt-4">案例展示</div>
+      <div class="nav-item">📁 文档案例</div>
+      <div class="nav-item">🖼️ 图片案例</div>
+      <div class="nav-item">🎬 视频案例</div>
+      <div class="nav-item">🌐 网页案例</div>
+      <div class="text-xs text-gray-400 px-4 py-2 mt-4">个人中心</div>
+      <div class="nav-item">📜 历史记录</div>
+      <div class="nav-item">⚙️ 设置</div>
+    </nav>
+  </div>
+
+  <!-- 主内容 -->
+  <div class="main-content p-6">
+    <!-- 顶部导航 -->
+    <nav class="flex items-center justify-between h-14 bg-white border-b border-gray-200 px-6 mb-4">
+      <div class="text-xl font-bold">MediaPrompt AI</div>
+      <div class="flex items-center gap-4">
+        <button id="btnZh" class="btn-active px-3 py-1 rounded text-xs" onclick="switchLang('zh')">中文</button>
+        <button id="btnEn" class="btn-inactive px-3 py-1 rounded text-xs" onclick="switchLang('en')">EN</button>
+        <span class="text-sm text-gray-500 cursor-pointer">登录</span>
+        <button class="btn-primary text-sm">注册</button>
+      </div>
+    </nav>
+
+    <!-- 副标题区域 -->
+    <div class="bg-white border-b border-gray-200 px-6 py-3 mb-6">
+      <p class="text-sm text-gray-500 text-center mb-3" id="subtitle">上传你喜欢的内容，提炼有效提示词，让美好可以复刻迭代</p>
+      <div class="flex gap-2 justify-center">
+        <button id="btnDoc" class="btn-active px-4 py-1.5 rounded-lg text-sm border border-gray-300" onclick="switchCategory('document')">📄 文档</button>
+        <button id="btnImg" class="btn-inactive px-4 py-1.5 rounded-lg text-sm border" onclick="switchCategory('image')">🖼️ 图片</button>
+        <button id="btnVid" class="btn-inactive px-4 py-1.5 rounded-lg text-sm border" onclick="switchCategory('video')">🎬 视频</button>
+        <button id="btnWeb" class="btn-inactive px-4 py-1.5 rounded-lg text-sm border" onclick="switchCategory('website')">🌐 网页</button>
+      </div>
+    </div>
+
+    <!-- 上传区域 -->
+    <div class="upload-zone mb-6" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+      <p class="text-gray-600 mb-2" id="uploadText">拖拽文件到此处，或点击上传</p>
+      <p class="text-gray-400 text-xs" id="fileHint">支持 Word/PDF/TXT/Markdown</p>
+      <input type="file" id="fileInput" class="hidden">
+    </div>
+
+    <!-- 输出选项 -->
+    <div class="mb-6">
+      <h3 class="text-sm font-medium text-gray-600 mb-2">输出选项</h3>
+      <div id="documentOptions" class="flex gap-2 flex-wrap">
+        <button class="tag-btn tag-selected px-3 py-1 rounded-full text-sm border border-gray-300" onclick="toggleTag(this)">提示词整合</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200" onclick="toggleTag(this)">功能列表</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200" onclick="toggleTag(this)">MVP文档</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200" onclick="toggleTag(this)">技术栈</button>
+      </div>
+      <div id="imageOptions" class="hidden flex gap-2 flex-wrap">
+        <button class="tag-btn tag-selected px-3 py-1 rounded-full text-sm border border-gray-300" onclick="toggleTag(this)">提示词整合</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200" onclick="toggleTag(this)">场景描述</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200" onclick="toggleTag(this)">风格设定</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200" onclick="toggleTag(this)">光线与氛围</button>
+      </div>
+      <div id="videoOptions" class="hidden flex gap-2 flex-wrap">
+        <button class="tag-btn tag-selected px-3 py-1 rounded-full text-sm border border-gray-300" onclick="toggleTag(this)">提示词整合</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200" onclick="toggleTag(this)">场景描述</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200" onclick="toggleTag(this)">风格</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200" onclick="toggleTag(this)">光影</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200" onclick="toggleTag(this)">主体与动作</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200" onclick="toggleTag(this)">镜头变化</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200" onclick="toggleTag(this)">分镜说明</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200" onclick="toggleTag(this)">细节分析</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200" onclick="toggleTag(this)">动态细节</button>
+      </div>
+      <div id="websiteOptions" class="hidden flex gap-2 flex-wrap">
+        <button class="tag-btn tag-selected px-3 py-1 rounded-full text-sm border border-gray-300" onclick="toggleTag(this)">提示词整合</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200" onclick="toggleTag(this)">功能列表</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200" onclick="toggleTag(this)">MVP文档</button>
+      </div>
+    </div>
+
+    <!-- 视频专属选项 -->
+    <div id="videoSection" class="hidden mb-6 p-4 bg-white rounded-xl border border-gray-200">
+      <h3 class="text-sm font-medium text-gray-600 mb-3">🎬 视频专属选项</h3>
+      <div class="mb-3">
+        <span class="text-sm text-gray-500">📐 视频尺寸：</span>
+        <div class="flex gap-2 mt-2">
+          <button class="aspect-btn btn-active px-3 py-1 rounded text-xs border" data-aspect="16:9" onclick="switchAspect(this)">16:9</button>
+          <button class="aspect-btn btn-inactive px-3 py-1 rounded text-xs border" data-aspect="9:16" onclick="switchAspect(this)">9:16</button>
+          <button class="aspect-btn btn-inactive px-3 py-1 rounded text-xs border" data-aspect="4:3" onclick="switchAspect(this)">4:3</button>
+          <button class="aspect-btn btn-inactive px-3 py-1 rounded text-xs border" data-aspect="1:1" onclick="switchAspect(this)">1:1</button>
+          <button class="aspect-btn btn-inactive px-3 py-1 rounded text-xs border" data-aspect="21:9" onclick="switchAspect(this)">21:9</button>
+        </div>
+      </div>
+      <div>
+        <span class="text-sm text-gray-500">🎙️ 同期AI配音：</span>
+        <input type="text" class="w-full mt-2 px-4 py-2 border border-gray-200 rounded-lg text-sm" placeholder="输入配音文字，支持多种风格：专业解说、故事叙述、情感表达、活力四射..." id="voiceoverInput">
+      </div>
+    </div>
+
+    <!-- 预览区 -->
+    <div class="mb-6">
+      <h3 class="text-sm font-medium text-gray-600 mb-2">✨ 创意类似+</h3>
+      <div class="output-card min-h-[120px]">
+        <p class="text-gray-400 text-sm">预览结果将显示在这里...</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ====== 全局变量 ======
+    var currentLang = 'zh';
+    var currentType = 'document';
+    var currentAspect = '16:9';
+
+    // ====== 语言切换 ======
+    function switchLang(lang) {
+      currentLang = lang;
+      document.getElementById('btnZh').className = lang === 'zh' ? 'btn-active px-3 py-1 rounded text-xs' : 'btn-inactive px-3 py-1 rounded text-xs';
+      document.getElementById('btnEn').className = lang === 'en' ? 'btn-active px-3 py-1 rounded text-xs' : 'btn-inactive px-3 py-1 rounded text-xs';
+      updateLanguage();
+    }
+
+    function updateLanguage() {
+      var texts = {
+        zh: {
+          subtitle: '上传你喜欢的内容，提炼有效提示词，让美好可以复刻迭代',
+          uploadText: '拖拽文件到此处，或点击上传',
+          fileHint: { document: '支持 Word/PDF/TXT/Markdown', image: '支持 JPG/PNG/WebP/GIF', video: '支持 MP4/MOV，建议30秒内', website: '支持 URL/网页截图' }
+        },
+        en: {
+          subtitle: 'Upload content you like, extract effective prompts',
+          uploadText: 'Drag file here, or click to upload',
+          fileHint: { document: 'Support Word/PDF/TXT/Markdown', image: 'Support JPG/PNG/WebP/GIF', video: 'Support MP4/MOV, within 30 seconds', website: 'Support URL/Screenshot' }
+        }
+      };
+      document.getElementById('subtitle').textContent = texts[currentLang].subtitle;
+      document.getElementById('uploadText').textContent = texts[currentLang].uploadText;
+      document.getElementById('fileHint').textContent = texts[currentLang].fileHint[currentType];
+    }
+
+    // ====== 类别切换 ======
+    function switchCategory(type) {
+      currentType = type;
+      var btns = { document: 'btnDoc', image: 'btnImg', video: 'btnVid', website: 'btnWeb' };
+      for (var key in btns) {
+        document.getElementById(btns[key]).className = key === type ? 'btn-active px-4 py-1.5 rounded-lg text-sm border border-gray-300' : 'btn-inactive px-4 py-1.5 rounded-lg text-sm border';
+      }
+      var options = { document: 'documentOptions', image: 'imageOptions', video: 'videoOptions', website: 'websiteOptions' };
+      for (var key in options) {
+        document.getElementById(options[key]).className = key === type ? 'flex gap-2 flex-wrap' : 'hidden flex gap-2 flex-wrap';
+      }
+      document.getElementById('videoSection').style.display = type === 'video' ? 'block' : 'none';
+      updateLanguage();
+    }
+
+    // ====== 导航切换 ======
+    function switchNav(el) {
+      var navItems = document.querySelectorAll('.nav-item');
+      for (var i = 0; i < navItems.length; i++) {
+        navItems[i].classList.remove('active');
+      }
+      el.classList.add('active');
+    }
+
+    // ====== 视频尺寸 ======
+    function switchAspect(el) {
+      var btns = document.querySelectorAll('.aspect-btn');
+      for (var i = 0; i < btns.length; i++) {
+        btns[i].className = 'aspect-btn btn-inactive px-3 py-1 rounded text-xs border';
+      }
+      el.className = 'aspect-btn btn-active px-3 py-1 rounded text-xs border';
+      currentAspect = el.dataset.aspect;
+    }
+
+    // ====== 选项标签 ======
+    function toggleTag(el) {
+      el.classList.toggle('tag-selected');
+    }
+  </script>
+</body>
+</html>

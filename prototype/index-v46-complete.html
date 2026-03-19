@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com http://124.156.200.127:3001; img-src 'self' data: https:; connect-src 'self' http://124.156.200.127:3001;">
+  <title>MediaPrompt AI - Content Reverse Engineering Toolkit</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+    body { background: #f5f5f7; min-height: 100vh; }
+    .sidebar { background: #ffffff; border-right: 1px solid #e5e5e5; position: fixed; top: 0; left: 0; height: 100vh; z-index: 20; }
+    .main-content { margin-left: 208px; min-height: 100vh; }
+    .nav-item { transition: all 0.15s ease; }
+    .nav-item:hover { background: #f5f5f7; }
+    .nav-item.active { background: #e8e8ed; }
+    .upload-zone { background: #ffffff; border: 2px dashed #d1d1d6; transition: all 0.2s ease; }
+    .upload-zone:hover { border-color: #52525b; background: #fafafa; }
+    .upload-zone.dragover { border-color: #52525b; background: #f0f0f0; }
+    .btn-primary { background: linear-gradient(135deg, #52525b 0%, #3f3f46 50%, #52525b 100%); background-size: 200% 200%; animation: gradientShift 3s ease infinite; }
+    @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    .btn-loading { background: #52525b; animation: pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+    .btn-secondary { background: #ffffff; border: 1px solid #d1d1d6; }
+    .btn-secondary:hover { background: #f5f5f7; }
+    .output-card { background: #ffffff; border: 1px solid #e5e5e5; }
+    .lang-btn { transition: all 0.15s ease; }
+    .lang-btn.active { background: #52525b; color: white; }
+    .moon-container { position: relative; width: 32px; height: 32px; }
+    .moon-base { width: 32px; height: 32px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #e4e4e7 0%, #d4d4d8 25%, #a1a1aa 55%, #71717a 80%, #52525b 100%); position: relative; overflow: hidden; animation: moonRotate 20s linear infinite; }
+    @keyframes moonRotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .moon-base::before { content: ''; position: absolute; top: 3px; left: 4px; width: 5px; height: 5px; background: rgba(0,0,0,0.12); border-radius: 50%; box-shadow: 16px 2px 0 -1px rgba(0,0,0,0.08), 20px 10px 0 -2px rgba(0,0,0,0.15), 7px 18px 0 1px rgba(0,0,0,0.1), 18px 20px 0 -1px rgba(0,0,0,0.12); }
+    .moon-shadow { position: absolute; top: 0; left: 0; width: 32px; height: 32px; border-radius: 50%; pointer-events: none; animation: lunarEclipseReal 8s ease-in-out infinite; }
+    @keyframes lunarEclipseReal { 0% { box-shadow: inset 0 0 0 0 rgba(15,15,26,0); } 25% { box-shadow: inset 8px 0 0 0 rgba(15,15,26,0.7); } 50% { box-shadow: inset 18px 0 0 0 rgba(15,15,26,0.95); } 75% { box-shadow: inset 8px 0 0 0 rgba(15,15,26,0.7); } 100% { box-shadow: inset 0 0 0 0 rgba(15,15,26,0); } }
+    .fixed-header { position: fixed; top: 56px; left: 208px; right: 0; z-index: 25; background: #f5f5f7; padding: 12px 24px; }
+    .moon-icon { width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #f5f5f5 0%, #e5e5e5 40%, #d4d4d4 70%, #a3a3a3 100%); position: relative; flex-shrink: 0; }
+    .moon-95 { box-shadow: inset 14px 0 0 0 rgba(20,20,25,0.9); }
+    .moon-70 { box-shadow: inset 11px 0 0 0 rgba(20,20,25,0.9); }
+    .moon-40 { box-shadow: inset 6px 0 0 0 rgba(20,20,25,0.9); }
+    .moon-full { box-shadow: inset 2px 0 0 0 rgba(20,20,25,0.9); }
+    .prompt-block { background: #fafafa; border-left: 3px solid #52525b; padding: 8px 12px; margin-bottom: 8px; border-radius: 0 6px 6px 0; }
+    .prompt-label { font-weight: 600; color: #52525b; font-size: 12px; margin-bottom: 2px; }
+    .prompt-content { color: #4b5563; font-size: 12px; line-height: 1.5; }
+    .prompt-block.workflow { border-left-color: #71717a; }
+    .prompt-block.workflow .prompt-label { color: #71717a; }
+    .prompt-block.examples { border-left-color: #a1a1aa; }
+    .prompt-block.examples .prompt-label { color: #a1a1aa; }
+    .prompt-block.init { border-left-color: #52525b; }
+    .prompt-block.init .prompt-label { color: #52525b; }
+    .output-scroll { max-height: 280px; overflow-y: auto; }
+    .output-scroll::-webkit-scrollbar { width: 6px; }
+    .output-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+    .output-scroll::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+    .output-scroll::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+    .logo-bg { background: linear-gradient(135deg, #52525b 0%, #3f3f46 100%); }
+    .option-tag { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 8px; font-size: 12px; color: #9ca3af; background: #fafafa; border: 1px solid #e5e7eb; cursor: pointer; transition: all 0.15s ease; white-space: nowrap; }
+    .option-tag:hover { color: #6b7280; border-color: #d1d5db; }
+    .option-tag.selected { color: #374151; font-weight: 500; background: #f3f4f6; border-color: #9ca3af; }
+    .option-tag .dot { width: 10px; height: 10px; border-radius: 50%; background: transparent; border: 1.5px solid #d1d5db; transition: all 0.15s ease; flex-shrink: 0; }
+    .option-tag.selected .dot { background: #52525b; border-color: #52525b; }
+    .error-message { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 12px; border-radius: 8px; margin-bottom: 16px; }
+    .success-message { background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a; padding: 12px; border-radius: 8px; margin-bottom: 16px; }
+    /* AI输出过程展示框样式 */
+    .ai-output-panel { background: #ffffff; border: 1px solid #e5e5e5; border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+    .ai-output-header { background: #fafafa; border-bottom: 1px solid #e5e5e5; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; }
+    .ai-output-status { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #6b7280; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #9ca3af; }
+    .status-dot.processing { background: #3b82f6; animation: statusPulse 1.5s ease-in-out infinite; }
+    .status-dot.success { background: #22c55e; }
+    .status-dot.error { background: #ef4444; }
+    @keyframes statusPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.2); } }
+    .ai-output-process { padding: 10px 16px; background: #fafafa; border-bottom: 1px solid #f0f0f0; min-height: 36px; }
+    .process-step { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #6b7280; }
+    .process-step.active { color: #3b82f6; }
+    .process-step.done { color: #22c55e; }
+    .process-step.error { color: #ef4444; }
+    .spinner { width: 14px; height: 14px; border: 2px solid #e5e7eb; border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .ai-output-result { padding: 12px 16px; max-height: 220px; overflow-y: auto; }
+    .ai-output-result::-webkit-scrollbar { width: 4px; }
+    .ai-output-result::-webkit-scrollbar-track { background: #f1f1f1; }
+    .ai-output-result::-webkit-scrollbar-thumb { background: #d1d1d1; border-radius: 2px; }
+    .hidden { display: none !important; }
+    /* 社交媒体分享按钮 */
+    .social-btn { width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; border: none; }
+    .social-btn:hover { transform: scale(1.1); }
+    .social-btn.wechat { background: #07C160; }
+    .social-btn.douyin { background: #000000; }
+    .social-btn.xiaohongshu { background: #FF2442; }
+    .social-btn.weibo { background: #E6162D; }
+    .social-btn.twitter { background: #000000; }
+    .social-btn.facebook { background: #1877F2; }
+    .social-btn.linkedin { background: #0A66C2; }
+    .social-btn.instagram { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
+    .social-btn svg { width: 18px; height: 18px; fill: white; }
+    /* 视频尺寸选择 */
+    .size-option { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 8px; font-size: 12px; color: #9ca3af; background: #fafafa; border: 1px solid #e5e7eb; cursor: pointer; transition: all 0.15s ease; }
+    .size-option:hover { color: #6b7280; border-color: #d1d5db; }
+    .size-option.selected { color: #374151; font-weight: 500; background: #f3f4f6; border-color: #9ca3af; }
+    /* AI思考过程折叠区 */
+    .thinking-collapse { background: #fafafa; border: 1px solid #e5e5e5; border-radius: 8px; margin-bottom: 12px; overflow: hidden; }
+    .thinking-header { padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; background: #f5f5f7; }
+    .thinking-header:hover { background: #efefef; }
+    .thinking-content { padding: 12px 16px; border-top: 1px solid #e5e5e5; }
+    .thinking-step { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+    .thinking-step:last-child { border-bottom: none; }
+    .thinking-step-num { width: 20px; height: 20px; border-radius: 50%; background: #e5e5e5; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #6b7280; flex-shrink: 0; }
+    .thinking-step.active .thinking-step-num { background: #3b82f6; color: white; }
+    .thinking-step.done .thinking-step-num { background: #22c55e; color: white; }
+    .thinking-step-text { font-size: 12px; color: #6b7280; flex: 1; }
+    .thinking-step.active .thinking-step-text { color: #3b82f6; }
+    .thinking-step.done .thinking-step-text { color: #22c55e; }
+    /* 流式输出效果 */
+    .streaming-cursor { display: inline-block; width: 2px; height: 14px; background: #3b82f6; animation: blink 0.8s infinite; vertical-align: middle; margin-left: 2px; }
+    @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+    /* 结构化输出区 */
+    .structured-section { margin-bottom: 8px; }
+    .structured-section-title { font-weight: 600; color: #52525b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .structured-section-content { color: #4b5563; font-size: 12px; line-height: 1.5; padding-left: 8px; border-left: 2px solid #e5e5e5; }
+  </style>
+</head>
+<body class="bg-[#f5f5f7] text-gray-800">
+  
+  <!-- 左侧固定导航栏 -->
+  <aside class="sidebar w-52 flex-shrink-0 flex flex-col">
+    <div class="h-14 px-4 border-b border-gray-200 flex items-center">
+      <div class="w-8 h-8 rounded-lg logo-bg flex items-center justify-center"><span class="text-white font-bold text-sm">M</span></div>
+      <span class="font-semibold text-gray-800 ml-2">MediaPrompt</span>
+    </div>
+    <nav class="flex-1 p-3 overflow-y-auto">
+      <div class="text-xs text-gray-400 px-3 py-2" data-i18n="nav.tools">分析工具</div>
+      <a href="#" class="nav-item active flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-700" data-type="document"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><span data-i18n="nav.document">文档分析</span></a>
+      <a href="#" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500" data-type="image"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg><span data-i18n="nav.image">图片分析</span></a>
+      <a href="#" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500" data-type="video"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg><span data-i18n="nav.video">视频分析</span></a>
+      <a href="#" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500" data-type="website"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg><span data-i18n="nav.website">网页分析</span></a>
+      <div class="text-xs text-gray-400 px-3 py-2 mt-4" data-i18n="nav.cases">案例展示</div>
+      <a href="cases.html#document" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg><span data-i18n="nav.documentCase">文档案例</span></a>
+      <a href="cases.html#image" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg><span data-i18n="nav.imageCase">图片案例</span></a>
+      <a href="cases.html#video" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg><span data-i18n="nav.videoCase">视频案例</span></a>
+      <a href="cases.html#website" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg><span data-i18n="nav.websiteCase">网页案例</span></a>
+      <div class="text-xs text-gray-400 px-3 py-2 mt-4" data-i18n="nav.personal">个人中心</div>
+      <a href="#" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span data-i18n="nav.history">历史记录</span></a>
+      <a href="#" class="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg><span data-i18n="nav.settings">设置</span></a>
+    </nav>
+    <div class="p-4 border-t border-gray-200">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center"><span class="text-xs text-gray-500">U</span></div>
+        <div class="flex-1 min-w-0"><p class="text-sm text-gray-700 truncate" data-i18n="nav.username">用户名</p><p class="text-xs text-gray-400" data-i18n="nav.userType">免费用户</p></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 主内容区 -->
+  <div class="main-content">
+    <nav class="h-14 border-b border-gray-200 flex items-center justify-between px-8 bg-white sticky top-0 z-10">
+      <div class="flex items-center gap-6">
+        <a href="#" class="text-sm text-gray-800 font-medium" data-i18n="top.home">首页</a>
+        <a href="#" class="text-sm text-gray-500" data-i18n="top.pricing">定价</a>
+        <a href="#" class="text-sm text-gray-500" data-i18n="top.about">关于</a>
+      </div>
+      <div class="flex items-center gap-2.5">
+        <div class="moon-container"><div class="moon-base"></div><div class="moon-shadow"></div></div>
+        <h1 class="text-base font-semibold text-gray-800" id="subtitle" data-i18n="subtitle">最好的学习从模仿开始</h1>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+          <button class="lang-btn active px-3 py-1 rounded text-xs font-medium" data-lang="zh">中文</button>
+          <button class="lang-btn px-3 py-1 rounded text-xs text-gray-500" data-lang="en">EN</button>
+        </div>
+        <button class="text-sm text-gray-500 hover:text-gray-800" data-i18n="top.login">登录</button>
+        <button class="btn-primary px-4 py-1.5 rounded text-sm text-white" data-i18n="top.register">注册</button>
+      </div>
+    </nav>
+
+    <!-- 固定副标题区域 -->
+    <div class="fixed-header">
+      <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-3"><p class="text-gray-500 text-sm" data-i18n="header.subtext">上传你喜欢的内容，提炼有效提示词，让美好可以复刻迭代</p></div>
+        <div class="flex gap-2 justify-center">
+          <button class="category-btn px-4 py-1.5 rounded-lg text-sm font-medium bg-white text-gray-800 border border-gray-600 shadow-sm flex items-center gap-2" data-type="document"><span class="moon-icon moon-95"></span><span data-i18n="category.document">文档</span></button>
+          <button class="category-btn px-4 py-1.5 rounded-lg text-sm text-gray-500 bg-white border border-gray-200 flex items-center gap-2" data-type="image"><span class="moon-icon moon-70"></span><span data-i18n="category.image">图片</span></button>
+          <button class="category-btn px-4 py-1.5 rounded-lg text-sm text-gray-500 bg-white border border-gray-200 flex items-center gap-2" data-type="video"><span class="moon-icon moon-40"></span><span data-i18n="category.video">视频</span></button>
+          <button class="category-btn px-4 py-1.5 rounded-lg text-sm text-gray-500 bg-white border border-gray-200 flex items-center gap-2" data-type="website"><span class="moon-icon moon-full"></span><span data-i18n="category.website">网页</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-6 max-w-4xl mx-auto pt-28">
+      <div id="messageArea" class="hidden"></div>
+      
+      <!-- AI思考过程折叠区 -->
+      <div class="thinking-collapse" id="thinkingCollapse">
+        <div class="thinking-header" id="thinkingHeader">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+            <span class="text-sm font-medium text-gray-700" data-i18n="thinking.title">AI 思考过程</span>
+          </div>
+          <svg class="w-4 h-4 text-gray-400 transition-transform" id="thinkingArrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </div>
+        <div class="thinking-content hidden" id="thinkingContent">
+          <div class="thinking-step" data-step="1"><div class="thinking-step-num">1</div><div class="thinking-step-text" data-i18n="thinking.step1">正在读取文件内容...</div></div>
+          <div class="thinking-step" data-step="2"><div class="thinking-step-num">2</div><div class="thinking-step-text" data-i18n="thinking.step2">识别内容类型和格式...</div></div>
+          <div class="thinking-step" data-step="3"><div class="thinking-step-num">3</div><div class="thinking-step-text" data-i18n="thinking.step3">提取关键信息和结构...</div></div>
+          <div class="thinking-step" data-step="4"><div class="thinking-step-num">4</div><div class="thinking-step-text" data-i18n="thinking.step4">分析风格和语调...</div></div>
+          <div class="thinking-step" data-step="5"><div class="thinking-step-num">5</div><div class="thinking-step-text" data-i18n="thinking.step5">识别核心主题和意图...</div></div>
+          <div class="thinking-step" data-step="6"><div class="thinking-step-num">6</div><div class="thinking-step-text" data-i18n="thinking.step6">构建提示词框架...</div></div>
+          <div class="thinking-step" data-step="7"><div class="thinking-step-num">7</div><div class="thinking-step-text" data-i18n="thinking.step7">优化表达和细节...</div></div>
+          <div class="thinking-step" data-step="8"><div class="thinking-step-num">8</div><div class="thinking-step-text" data-i18n="thinking.step8">验证输出完整性...</div></div>
+          <div class="thinking-step" data-step="9"><div class="thinking-step-num">9</div><div class="thinking-step-text" data-i18n="thinking.step9">格式化最终结果...</div></div>
+          <div class="thinking-step" data-step="10"><div class="thinking-step-num">10</div><div class="thinking-step-text" data-i18n="thinking.step10">生成完成！</div></div>
+        </div>
+      </div>
+      
+      <!-- AI输出过程展示框 -->
+      <div class="ai-output-panel" id="aiOutputPanel">
+        <div class="ai-output-header">
+          <div class="ai-output-status">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="statusText" data-i18n="status.waiting">等待上传</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="text-sm text-gray-600 hover:text-gray-800 flex items-center gap-1" id="copyBtn">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              <span data-i18n="btn.copy">复制</span>
+            </button>
+            <button class="text-sm text-gray-600 hover:text-gray-800 flex items-center gap-1" id="downloadBtn">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span data-i18n="btn.download">下载</span>
+            </button>
+          </div>
+        </div>
+        <div class="ai-output-process" id="aiProcessArea">
+          <div class="process-step" id="processStep">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span data-i18n="process.ready">准备就绪，等待上传文件...</span>
+          </div>
+        </div>
+        <div class="ai-output-result" id="aiResultArea">
+          <p class="text-gray-400 text-sm text-center" data-i18n="result.placeholder">上传内容后点击"开始分析"生成提示词</p>
+        </div>
+      </div>
+      
+      <!-- 文件拖拽区 -->
+      <div class="upload-zone rounded-xl py-3 px-4 text-center cursor-pointer mb-4" id="uploadZone">
+        <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-1.5">
+          <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+        </div>
+        <p class="text-gray-600 text-sm mb-0.5" id="uploadText" data-i18n="upload.drag">拖放文件到此处</p>
+        <p class="text-gray-400 text-xs" id="fileHint" data-i18n="hint.document">支持 Word/PDF/TXT/Markdown</p>
+      </div>
+      
+      <!-- 文件上传 + 模型选择 + 开始分析 -->
+      <div class="flex gap-3 mb-6 items-center flex-wrap">
+        <input type="file" id="fileInput" class="hidden">
+        <button id="selectFileBtn" class="btn-secondary flex-1 py-2.5 rounded-xl text-sm text-gray-600 font-medium shadow-sm">📁 <span data-i18n="btn.selectFile">选择文件上传</span></button>
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-gray-500" data-i18n="label.model">模型选择：</span>
+          <select id="modelSelect" class="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-gray-400 min-w-[140px]">
+            <option value="auto">🤖 <span data-i18n="model.auto">自动选择</span></option>
+            <optgroup label="国内模型"><option value="hunyuan-lite">混元 Lite</option><option value="hunyuan-pro">混元 Pro</option><option value="qwen">通义千问</option></optgroup>
+            <optgroup label="International"><option value="gpt4">GPT-4o</option><option value="claude">Claude 3.5</option></optgroup>
+          </select>
+        </div>
+        <button class="btn-primary px-6 py-2.5 rounded-xl text-white font-medium shadow-sm" id="analyzeBtn">🔍 <span data-i18n="btn.analyze">开始分析</span></button>
+      </div>
+      
+      <!-- 输出选项 -->
+      <div class="mb-5 flex items-center gap-3 flex-wrap">
+        <h3 class="text-sm font-medium text-gray-600" data-i18n="options.title">希望输出的内容（可多选）</h3>
+        <div id="documentOptions" class="flex items-center gap-1 flex-wrap">
+          <span class="option-tag selected" data-value="prompt"><span class="dot"></span><span data-i18n="opt.prompt">提示词</span></span>
+          <span class="option-tag" data-value="outline"><span class="dot"></span><span data-i18n="opt.outline">大纲梗概</span></span>
+          <span class="option-tag" data-value="structure"><span class="dot"></span><span data-i18n="opt.structure">结构分析</span></span>
+          <span class="option-tag" data-value="keywords"><span class="dot"></span><span data-i18n="opt.keywords">关键词</span></span>
+        </div>
+        <div id="imageOptions" class="hidden flex items-center gap-1 flex-wrap">
+          <span class="option-tag selected" data-value="prompt"><span class="dot"></span><span data-i18n="opt.prompt">提示词</span></span>
+          <span class="option-tag" data-value="style"><span class="dot"></span><span data-i18n="opt.style">风格描述</span></span>
+          <span class="option-tag" data-value="colors"><span class="dot"></span><span data-i18n="opt.colors">配色方案</span></span>
+          <span class="option-tag" data-value="params"><span class="dot"></span><span data-i18n="opt.params">参数建议</span></span>
+        </div>
+        <div id="videoOptions" class="hidden flex items-center gap-1 flex-wrap">
+          <span class="option-tag selected" data-value="prompt"><span class="dot"></span><span data-i18n="opt.promptIntegrate">提示词整合</span></span>
+          <span class="option-tag" data-value="scene"><span class="dot"></span><span data-i18n="opt.scene">场景描述</span></span>
+          <span class="option-tag" data-value="style"><span class="dot"></span><span data-i18n="opt.style">风格</span></span>
+          <span class="option-tag" data-value="light"><span class="dot"></span><span data-i18n="opt.light">光影</span></span>
+          <span class="option-tag" data-value="subject"><span class="dot"></span><span data-i18n="opt.subject">主体与动作</span></span>
+          <span class="option-tag" data-value="camera"><span class="dot"></span><span data-i18n="opt.camera">镜头变化</span></span>
+          <span class="option-tag" data-value="storyboard"><span class="dot"></span><span data-i18n="opt.storyboard">分镜说明</span></span>
+          <span class="option-tag" data-value="detail"><span class="dot"></span><span data-i18n="opt.detail">细节分析</span></span>
+          <span class="option-tag" data-value="dynamic"><span class="dot"></span><span data-i18n="opt.dynamic">动态细节</span></span>
+        </div>
+        <div id="websiteOptions" class="hidden flex items-center gap-1 flex-wrap">
+          <span class="option-tag selected" data-value="prompt"><span class="dot"></span><span data-i18n="opt.prompt">提示词</span></span>
+          <span class="option-tag" data-value="features"><span class="dot"></span><span data-i18n="opt.features">功能列表</span></span>
+          <span class="option-tag" data-value="mvp"><span class="dot"></span><span data-i18n="opt.mvp">MVP文档</span></span>
+          <span class="option-tag" data-value="tech"><span class="dot"></span><span data-i18n="opt.tech">技术栈</span></span>
+        </div>
+      </div>
+      
+      <!-- 视频专属选项 -->
+      <div id="videoSpecificOptions" class="hidden mb-5 p-4 bg-white rounded-xl border border-gray-200">
+        <h4 class="text-sm font-medium text-gray-700 mb-3" data-i18n="video.title">视频专属选项</h4>
+        <div class="mb-4">
+          <label class="text-xs text-gray-500 mb-2 block" data-i18n="video.size">视频尺寸</label>
+          <div class="flex gap-2 flex-wrap">
+            <span class="size-option selected" data-size="16:9">16:9</span>
+            <span class="size-option" data-size="9:16">9:16</span>
+            <span class="size-option" data-size="4:3">4:3</span>
+            <span class="size-option" data-size="1:1">1:1</span>
+            <span class="size-option" data-size="21:9">21:9</span>
+          </div>
+        </div>
+        <div>
+          <label class="text-xs text-gray-500 mb-2 block" data-i18n="video.voiceover">同期AI配音</label>
+          <input type="text" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 placeholder-gray-400 focus:outline-none focus:border-gray-400" id="voiceoverInput" data-i18n-placeholder="video.voiceoverPlaceholder" placeholder="输入配音文案，如：新闻播报风格、轻松解说风格...">
+        </div>
+      </div>
+      
+      <!-- 用户编辑区 -->
+      <div class="mb-5">
+        <h3 class="text-sm font-medium text-gray-600 mb-2" data-i18n="editor.title">编辑修改（可选）</h3>
+        <textarea class="w-full h-24 bg-white border border-gray-200 rounded-xl p-3 text-sm text-gray-600 placeholder-gray-400 focus:outline-none focus:border-gray-400" data-i18n-placeholder="editor.placeholder" placeholder="在这里修改提示词或添加你的想法..." id="editorArea"></textarea>
+      </div>
+      
+      <!-- 社交媒体分享按钮 -->
+      <div class="mb-5">
+        <h4 class="text-sm font-medium text-gray-600 mb-3" data-i18n="share.title">分享到</h4>
+        <div id="shareChinese" class="flex gap-3">
+          <button class="social-btn wechat" title="微信" onclick="shareToWechat()">
+            <svg viewBox="0 0 24 24"><path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178A1.17 1.17 0 0 1 4.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178 1.17 1.17 0 0 1-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 0 1 .598.082l1.584.926a.272.272 0 0 0 .14.047c.134 0 .24-.111.24-.247 0-.06-.023-.12-.038-.177l-.327-1.233a.582.582 0 0 1-.023-.156.49.49 0 0 1 .201-.398C23.024 18.48 24 16.82 24 14.98c0-3.21-2.931-5.837-6.656-6.088V8.89c-.135-.006-.27-.018-.407-.032zm-2.53 3.274c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.97-.982zm4.844 0c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.969-.982z"/></svg>
+          </button>
+          <button class="social-btn douyin" title="抖音" onclick="shareToDouyin()">
+            <svg viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+          </button>
+          <button class="social-btn xiaohongshu" title="小红书" onclick="shareToXiaohongshu()">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+          </button>
+          <button class="social-btn weibo" title="微博" onclick="shareToWeibo()">
+            <svg viewBox="0 0 24 24"><path d="M10.098 20.323c-3.977.391-7.414-1.406-7.672-4.02-.259-2.609 2.759-5.047 6.74-5.441 3.979-.394 7.413 1.404 7.671 4.018.259 2.6-2.759 5.049-6.739 5.443zM9.05 17.219c-.384.616-1.208.884-1.829.602-.612-.279-.793-.991-.406-1.593.379-.595 1.176-.861 1.793-.601.622.263.82.972.442 1.592zm1.27-1.627c-.141.237-.449.353-.689.253-.236-.09-.313-.361-.177-.586.138-.227.436-.346.672-.24.239.09.315.36.194.573zm.176-2.719c-1.893-.493-4.033.45-4.857 2.118-.836 1.704-.026 3.591 1.886 4.21 1.983.64 4.318-.341 5.132-2.179.8-1.793-.201-3.642-2.161-4.149zm7.563-1.224c-.346-.105-.57-.18-.405-.649.356-.998.39-1.858.002-2.47-.727-1.148-2.708-1.085-4.9-.03 0 0-.702.306-.522-.25.346-1.1.294-2.02-.246-2.55-1.226-1.2-4.49.043-7.29 2.774C2.842 11.478 1 14.4 1 16.929c0 4.842 6.207 7.785 12.277 7.785 7.96 0 13.263-4.625 13.263-8.292 0-2.213-1.866-3.469-3.461-3.973zm2.014-4.576c-.064-.19-.178-.36-.329-.5-.154-.143-.338-.251-.54-.318-.203-.068-.417-.087-.628-.059-.212.028-.41.102-.583.216-.173.114-.314.263-.412.437-.1.174-.152.368-.155.566-.003.199.042.395.133.573.09.178.223.332.388.449.164.117.355.193.555.22.2.027.404.004.595-.069.192-.073.362-.191.496-.343.133-.151.227-.331.272-.526.045-.195.04-.398-.016-.59-.057-.192-.157-.367-.291-.512-.135-.145-.301-.256-.485-.324z"/></svg>
+          </button>
+        </div>
+        <div id="shareEnglish" class="hidden flex gap-3">
+          <button class="social-btn twitter" title="X (Twitter)" onclick="shareToTwitter()">
+            <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          </button>
+          <button class="social-btn facebook" title="Facebook" onclick="shareToFacebook()">
+            <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+          </button>
+          <button class="social-btn linkedin" title="LinkedIn" onclick="shareToLinkedIn()">
+            <svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+          </button>
+          <button class="social-btn instagram" title="Instagram" onclick="shareToInstagram()">
+            <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
+          </button>
+        </div>
+      </div>
+      
+      <!-- 模拟输出 + 模型选择 -->
+      <div class="flex gap-3 mb-6 items-center flex-wrap">
+        <button class="btn-secondary py-2.5 px-5 rounded-xl text-sm text-gray-600 font-medium shadow-sm flex items-center gap-2" id="previewBtn"><span class="moon-icon moon-70"></span><span data-i18n="btn.preview">模拟输出预览</span></button>
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-gray-500" data-i18n="label.model">模型选择：</span>
+          <select id="modelSelect2" class="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-gray-400 min-w-[140px]">
+            <option value="auto">🤖 <span data-i18n="model.auto">自动选择</span></option>
+            <optgroup label="国内模型"><option value="hunyuan-lite">混元 Lite</option><option value="hunyuan-pro">混元 Pro</option></optgroup>
+            <optgroup label="International"><option value="gpt4">GPT-4o</option><option value="claude">Claude 3.5</option></optgroup>
+          </select>
+        </div>
+        <div id="imageCount" class="hidden items-center gap-2">
+          <span class="text-sm text-gray-500" data-i18n="label.count">生成数量：</span>
+          <select class="bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 focus:outline-none focus:border-gray-400"><option data-i18n="count.1">1张</option><option data-i18n="count.2">2张</option><option data-i18n="count.4">4张</option></select>
+        </div>
+      </div>
+      
+      <!-- 预览区 -->
+      <div class="mb-4">
+        <h3 class="text-sm font-medium text-gray-600 mb-2" id="previewTitle" data-i18n="preview.title">创意类似+</h3>
+        <div class="output-card rounded-xl p-4 min-h-[120px] shadow-sm">
+          <div id="imagePreview" class="hidden grid grid-cols-2 gap-3">
+            <div class="aspect-square bg-gray-100 rounded-lg flex items-center justify-center"><span class="text-gray-400 text-xs" data-i18n="preview.image1">图片 1</span></div>
+            <div class="aspect-square bg-gray-100 rounded-lg flex items-center justify-center"><span class="text-gray-400 text-xs" data-i18n="preview.image2">图片 2</span></div>
+          </div>
+          <div id="videoPreview" class="hidden"><div class="aspect-video bg-gray-100 rounded-lg flex items-center justify-center"><span class="text-gray-400 text-xs" data-i18n="preview.video">视频预览区</span></div></div>
+          <div id="textPreview" class="text-gray-600 text-sm"><p class="text-gray-400 text-xs" data-i18n="preview.placeholder">预览结果将显示在这里...</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 完整的多语言翻译对象
+    const i18n = {
+      zh: {
+        // 顶部
+        'top.home': '首页',
+        'top.pricing': '定价',
+        'top.about': '关于',
+        'top.login': '登录',
+        'top.register': '注册',
+        // 副标题
+        'subtitle': '最好的学习从模仿开始',
+        'header.subtext': '上传你喜欢的内容，提炼有效提示词，让美好可以复刻迭代',
+        // 导航
+        'nav.tools': '分析工具',
+        'nav.document': '文档分析',
+        'nav.image': '图片分析',
+        'nav.video': '视频分析',
+        'nav.website': '网页分析',
+        'nav.cases': '案例展示',
+        'nav.documentCase': '文档案例',
+        'nav.imageCase': '图片案例',
+        'nav.videoCase': '视频案例',
+        'nav.websiteCase': '网页案例',
+        'nav.personal': '个人中心',
+        'nav.history': '历史记录',
+        'nav.settings': '设置',
+        'nav.username': '用户名',
+        'nav.userType': '免费用户',
+        // 分类
+        'category.document': '文档',
+        'category.image': '图片',
+        'category.video': '视频',
+        'category.website': '网页',
+        // 上传
+        'upload.drag': '拖放文件到此处',
+        'hint.document': '支持 Word/PDF/TXT/Markdown',
+        'hint.image': '支持 JPG/PNG/WebP/GIF',
+        'hint.video': '支持 MP4/MOV，≤30秒',
+        'hint.website': '支持 URL/网页截图',
+        // 按钮
+        'btn.selectFile': '选择文件上传',
+        'btn.analyze': '开始分析',
+        'btn.copy': '复制',
+        'btn.download': '下载',
+        'btn.preview': '模拟输出预览',
+        // 标签
+        'label.model': '模型选择：',
+        'label.count': '生成数量：',
+        'model.auto': '自动选择',
+        'count.1': '1张',
+        'count.2': '2张',
+        'count.4': '4张',
+        // 输出选项
+        'options.title': '希望输出的内容（可多选）',
+        'opt.prompt': '提示词',
+        'opt.promptIntegrate': '提示词整合',
+        'opt.outline': '大纲梗概',
+        'opt.structure': '结构分析',
+        'opt.keywords': '关键词',
+        'opt.style': '风格描述',
+        'opt.colors': '配色方案',
+        'opt.params': '参数建议',
+        'opt.scene': '场景描述',
+        'opt.light': '光影',
+        'opt.subject': '主体与动作',
+        'opt.camera': '镜头变化',
+        'opt.storyboard': '分镜说明',
+        'opt.detail': '细节分析',
+        'opt.dynamic': '动态细节',
+        'opt.features': '功能列表',
+        'opt.mvp': 'MVP文档',
+        'opt.tech': '技术栈',
+        // 视频专属
+        'video.title': '视频专属选项',
+        'video.size': '视频尺寸',
+        'video.voiceover': '同期AI配音',
+        'video.voiceoverPlaceholder': '输入配音文案，如：新闻播报风格、轻松解说风格...',
+        // 编辑区
+        'editor.title': '编辑修改（可选）',
+        'editor.placeholder': '在这里修改提示词或添加你的想法...',
+        // 分享
+        'share.title': '分享到',
+        // AI思考过程
+        'thinking.title': 'AI 思考过程',
+        'thinking.step1': '正在读取文件内容...',
+        'thinking.step2': '识别内容类型和格式...',
+        'thinking.step3': '提取关键信息和结构...',
+        'thinking.step4': '分析风格和语调...',
+        'thinking.step5': '识别核心主题和意图...',
+        'thinking.step6': '构建提示词框架...',
+        'thinking.step7': '优化表达和细节...',
+        'thinking.step8': '验证输出完整性...',
+        'thinking.step9': '格式化最终结果...',
+        'thinking.step10': '生成完成！',
+        // 状态
+        'status.waiting': '等待上传',
+        'status.processing': '分析中...',
+        'status.success': '分析完成',
+        'status.error': '分析失败',
+        'process.ready': '准备就绪，等待上传文件...',
+        'result.placeholder': '上传内容后点击"开始分析"生成提示词',
+        // 预览
+        'preview.title': '创意类似+',
+        'preview.image1': '图片 1',
+        'preview.image2': '图片 2',
+        'preview.video': '视频预览区',
+        'preview.placeholder': '预览结果将显示在这里...'
+      },
+      en: {
+        // Top
+        'top.home': 'Home',
+        'top.pricing': 'Pricing',
+        'top.about': 'About',
+        'top.login': 'Login',
+        'top.register': 'Sign Up',
+        // Subtitle
+        'subtitle': 'Best learning starts with imitation',
+        'header.subtext': 'Upload content you like, extract effective prompts, make beauty reproducible',
+        // Navigation
+        'nav.tools': 'Analysis Tools',
+        'nav.document': 'Document Analysis',
+        'nav.image': 'Image Analysis',
+        'nav.video': 'Video Analysis',
+        'nav.website': 'Website Analysis',
+        'nav.cases': 'Case Studies',
+        'nav.documentCase': 'Document Cases',
+        'nav.imageCase': 'Image Cases',
+        'nav.videoCase': 'Video Cases',
+        'nav.websiteCase': 'Website Cases',
+        'nav.personal': 'Personal',
+        'nav.history': 'History',
+        'nav.settings': 'Settings',
+        'nav.username': 'Username',
+        'nav.userType': 'Free User',
+        // Category
+        'category.document': 'Document',
+        'category.image': 'Image',
+        'category.video': 'Video',
+        'category.website': 'Website',
+        // Upload
+        'upload.drag': 'Drag file here',
+        'hint.document': 'Support Word/PDF/TXT/Markdown',
+        'hint.image': 'Support JPG/PNG/WebP/GIF',
+        'hint.video': 'Support MP4/MOV, ≤30s',
+        'hint.website': 'Support URL/Screenshot',
+        // Buttons
+        'btn.selectFile': 'Select File',
+        'btn.analyze': 'Analyze',
+        'btn.copy': 'Copy',
+        'btn.download': 'Download',
+        'btn.preview': 'Preview Output',
+        // Labels
+        'label.model': 'Model: ',
+        'label.count': 'Count: ',
+        'model.auto': 'Auto Select',
+        'count.1': '1 image',
+        'count.2': '2 images',
+        'count.4': '4 images',
+        // Output Options
+        'options.title': 'Output Options (Multi-select)',
+        'opt.prompt': 'Prompt',
+        'opt.promptIntegrate': 'Prompt Integration',
+        'opt.outline': 'Outline',
+        'opt.structure': 'Structure Analysis',
+        'opt.keywords': 'Keywords',
+        'opt.style': 'Style Description',
+        'opt.colors': 'Color Scheme',
+        'opt.params': 'Parameters',
+        'opt.scene': 'Scene Description',
+        'opt.light': 'Lighting',
+        'opt.subject': 'Subject & Action',
+        'opt.camera': 'Camera Movement',
+        'opt.storyboard': 'Storyboard',
+        'opt.detail': 'Detail Analysis',
+        'opt.dynamic': 'Dynamic Details',
+        'opt.features': 'Feature List',
+        'opt.mvp': 'MVP Document',
+        'opt.tech': 'Tech Stack',
+        // Video Specific
+        'video.title': 'Video Options',
+        'video.size': 'Video Size',
+        'video.voiceover': 'AI Voiceover',
+        'video.voiceoverPlaceholder': 'Enter voiceover text, e.g., news style, casual narration...',
+        // Editor
+        'editor.title': 'Edit (Optional)',
+        'editor.placeholder': 'Modify the prompt or add your ideas here...',
+        // Share
+        'share.title': 'Share to',
+        // AI Thinking
+        'thinking.title': 'AI Thinking Process',
+        'thinking.step1': 'Reading file content...',
+        'thinking.step2': 'Identifying content type and format...',
+        'thinking.step3': 'Extracting key information and structure...',
+        'thinking.step4': 'Analyzing style and tone...',
+        'thinking.step5': 'Identifying core themes and intent...',
+        'thinking.step6': 'Building prompt framework...',
+        'thinking.step7': 'Optimizing expression and details...',
+        'thinking.step8': 'Validating output completeness...',
+        'thinking.step9': 'Formatting final result...',
+        'thinking.step10': 'Generation complete!',
+        // Status
+        'status.waiting': 'Waiting for upload',
+        'status.processing': 'Processing...',
+        'status.success': 'Complete',
+        'status.error': 'Error',
+        'process.ready': 'Ready, waiting for file upload...',
+        'result.placeholder': 'Upload content and click "Analyze" to generate prompt',
+        // Preview
+        'preview.title': 'Similar Ideas+',
+        'preview.image1': 'Image 1',
+        'preview.image2': 'Image 2',
+        'preview.video': 'Video Preview',
+        'preview.placeholder': 'Preview results will appear here...'
+      }
+    };
+
+    // 使用DOMContentLoaded确保DOM加载完成后再绑定事件
+    document.addEventListener('DOMContentLoaded', function() {
+      const API_BASE_URL = 'http://124.156.200.127:3001';
+      let currentLang = 'zh';
+      let currentType = 'document';
+      let isLoading = false;
+      let uploadedContent = '';
+      let uploadedFile = null;
+      let selectedVideoSize = '16:9';
+      let currentThinkingStep = 0;
+      
+      // 多语言更新函数
+      function updateLanguage() {
+        const t = i18n[currentLang];
+        document.querySelectorAll('[data-i18n]').forEach(function(el) {
+          const key = el.getAttribute('data-i18n');
+          if (t[key]) {
+            el.textContent = t[key];
+          }
+        });
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+          const key = el.getAttribute('data-i18n-placeholder');
+          if (t[key]) {
+            el.placeholder = t[key];
+          }
+        });
+        
+        // 更新文件提示
+        const hintKey = 'hint.' + currentType;
+        const fileHint = document.getElementById('fileHint');
+        if (t[hintKey]) {
+          fileHint.textContent = t[hintKey];
+        }
+        
+        // 切换社交媒体按钮显示
+        if (currentLang === 'zh') {
+          document.getElementById('shareChinese').classList.remove('hidden');
+          document.getElementById('shareEnglish').classList.add('hidden');
+        } else {
+          document.getElementById('shareChinese').classList.add('hidden');
+          document.getElementById('shareEnglish').classList.remove('hidden');
+        }
+      }
+      
+      // 辅助函数
+      function showMessage(message, type) {
+        type = type || 'info';
+        var area = document.getElementById('messageArea');
+        area.className = type === 'error' ? 'error-message' : 'success-message';
+        area.textContent = message;
+        area.classList.remove('hidden');
+        setTimeout(function() {
+          area.classList.add('hidden');
+        }, 5000);
+      }
+      
+      function updateStatus(status, textKey) {
+        var dot = document.getElementById('statusDot');
+        var statusText = document.getElementById('statusText');
+        dot.className = 'status-dot';
+        if (status === 'processing') {
+          dot.classList.add('processing');
+        } else if (status === 'success') {
+          dot.classList.add('success');
+        } else if (status === 'error') {
+          dot.classList.add('error');
+        }
+        statusText.textContent = i18n[currentLang][textKey] || textKey;
+      }
+      
+      function updateProcess(status, textKey) {
+        var processArea = document.getElementById('aiProcessArea');
+        var icon = '';
+        if (status === 'processing') {
+          icon = '<div class="spinner"></div>';
+        } else if (status === 'done') {
+          icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>';
+        } else if (status === 'error') {
+          icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
+        } else {
+          icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
+        }
+        var text = i18n[currentLang][textKey] || textKey;
+        processArea.innerHTML = '<div class="process-step ' + status + '">' + icon + '<span>' + text + '</span></div>';
+      }
+      
+      // AI思考过程动画
+      function updateThinkingStep(step, status) {
+        var steps = document.querySelectorAll('.thinking-step');
+        steps.forEach(function(s, index) {
+          s.classList.remove('active', 'done');
+          if (index < step) {
+            s.classList.add('done');
+          } else if (index === step && status === 'active') {
+            s.classList.add('active');
+          }
+        });
+      }
+      
+      function animateThinkingProcess(callback) {
+        var step = 0;
+        var totalSteps = 10;
+        var interval = setInterval(function() {
+          if (step < totalSteps) {
+            updateThinkingStep(step, 'active');
+            step++;
+          } else {
+            clearInterval(interval);
+            updateThinkingStep(totalSteps - 1, 'done');
+            if (callback) callback();
+          }
+        }, 300);
+      }
+      
+      function getSelectedOptions() {
+        var container = document.getElementById(currentType + 'Options');
+        var selected = container.querySelectorAll('.option-tag.selected');
+        return Array.from(selected).map(function(el) {
+          return el.dataset.value;
+        });
+      }
+      
+      function formatPromptResult(text) {
+        // 结构化输出区
+        var sections = ['Role', 'Background', 'Profile', 'Skills', 'Goals', 'Constraints', 'OutputFormat', 'Workflow', 'Examples', 'Initialization'];
+        var html = '';
+        
+        // 尝试解析结构化内容
+        var lines = text.split('\n');
+        var currentSection = '';
+        var currentContent = [];
+        
+        lines.forEach(function(line) {
+          var trimmed = line.trim();
+          var foundSection = false;
+          sections.forEach(function(section) {
+            if (trimmed.toLowerCase().includes(section.toLowerCase()) && (trimmed.startsWith('#') || trimmed.startsWith('##'))) {
+              if (currentSection && currentContent.length > 0) {
+                html += '<div class="structured-section"><div class="structured-section-title">' + currentSection + '</div><div class="structured-section-content">' + currentContent.join('<br>') + '</div></div>';
+              }
+              currentSection = section;
+              currentContent = [];
+              foundSection = true;
+            }
+          });
+          if (!foundSection && trimmed && currentSection) {
+            currentContent.push(trimmed);
+          }
+        });
+        
+        // 添加最后一个section
+        if (currentSection && currentContent.length > 0) {
+          html += '<div class="structured-section"><div class="structured-section-title">' + currentSection + '</div><div class="structured-section-content">' + currentContent.join('<br>') + '</div></div>';
+        }
+        
+        // 如果没有解析到结构化内容，使用原来的方式
+        if (!html) {
+          var parts = text.split(/##\s*/).filter(function(s) { return s.trim(); });
+          parts.forEach(function(section) {
+            var sectionLines = section.trim().split('\n');
+            if (sectionLines.length === 0) return;
+            var title = sectionLines[0].trim();
+            var content = sectionLines.slice(1).join('\n').trim();
+            if (!title) return;
+            html += '<div class="prompt-block"><div class="prompt-label">' + title + '</div><div class="prompt-content">' + content.replace(/\n/g, '<br>') + '</div></div>';
+          });
+        }
+        
+        return html || '<div class="prompt-block"><div class="prompt-content">' + text.replace(/\n/g, '<br>') + '</div></div>';
+      }
+      
+      // 流式输出效果
+      function streamOutput(text, element, callback) {
+        var index = 0;
+        var speed = 10;
+        element.innerHTML = '';
+        
+        function type() {
+          if (index < text.length) {
+            element.innerHTML = text.substring(0, index + 1) + '<span class="streaming-cursor"></span>';
+            index++;
+            setTimeout(type, speed);
+          } else {
+            element.innerHTML = text;
+            if (callback) callback();
+          }
+        }
+        type();
+      }
+      
+      // 分析内容函数
+      function analyzeContent() {
+        if (!uploadedContent && !uploadedFile) {
+          showMessage(currentLang === 'zh' ? '请先上传文件或输入内容' : 'Please upload a file first', 'error');
+          return;
+        }
+        
+        var btn = document.getElementById('analyzeBtn');
+        btn.classList.remove('btn-primary');
+        btn.classList.add('btn-loading');
+        btn.innerHTML = '<span class="inline-flex items-center gap-2">⏳ ' + (currentLang === 'zh' ? '正在努力生成' : 'Generating') + '<span class="animate-pulse">...</span></span>';
+        
+        updateStatus('processing', 'status.processing');
+        updateProcess('processing', 'thinking.step1');
+        
+        // 展开思考过程
+        var thinkingContent = document.getElementById('thinkingContent');
+        thinkingContent.classList.remove('hidden');
+        
+        // 开始思考动画
+        animateThinkingProcess();
+        
+        try {
+          var formData = new FormData();
+          if (uploadedFile) {
+            formData.append('file', uploadedFile);
+            formData.append('category', currentType);
+            formData.append('outputOptions', JSON.stringify(getSelectedOptions()));
+            if (currentType === 'video') {
+              formData.append('videoSize', selectedVideoSize);
+              var voiceover = document.getElementById('voiceoverInput').value;
+              if (voiceover) {
+                formData.append('voiceover', voiceover);
+              }
+            }
+            
+            fetch(API_BASE_URL + '/api/analyze/file', {
+              method: 'POST',
+              body: formData
+            })
+            .then(function(response) {
+              return response.json();
+            })
+            .then(function(data) {
+              if (data.success) {
+                updateProcess('done', 'thinking.step10');
+                updateStatus('success', 'status.success');
+                streamOutput(data.result, document.getElementById('aiResultArea'));
+                showMessage(currentLang === 'zh' ? '分析完成！' : 'Analysis complete!');
+              } else {
+                updateProcess('error', 'status.error');
+                updateStatus('error', 'status.error');
+                showMessage(data.error || (currentLang === 'zh' ? '分析失败' : 'Analysis failed'), 'error');
+              }
+              resetAnalyzeButton(btn);
+            })
+            .catch(function(error) {
+              console.error('API Error:', error);
+              updateProcess('error', 'status.error');
+              updateStatus('error', 'status.error');
+              showMessage(currentLang === 'zh' ? '网络错误，请检查API服务' : 'Network error, please check API service', 'error');
+              resetAnalyzeButton(btn);
+            });
+          } else {
+            fetch(API_BASE_URL + '/api/analyze/text', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                content: uploadedContent,
+                category: currentType,
+                outputOptions: getSelectedOptions()
+              })
+            })
+            .then(function(response) {
+              return response.json();
+            })
+            .then(function(data) {
+              if (data.success) {
+                updateProcess('done', 'thinking.step10');
+                updateStatus('success', 'status.success');
+                streamOutput(data.result, document.getElementById('aiResultArea'));
+                showMessage(currentLang === 'zh' ? '分析完成！' : 'Analysis complete!');
+              } else {
+                updateProcess('error', 'status.error');
+                updateStatus('error', 'status.error');
+                showMessage(data.error || (currentLang === 'zh' ? '分析失败' : 'Analysis failed'), 'error');
+              }
+              resetAnalyzeButton(btn);
+            })
+            .catch(function(error) {
+              console.error('API Error:', error);
+              updateProcess('error', 'status.error');
+              updateStatus('error', 'status.error');
+              showMessage(currentLang === 'zh' ? '网络错误，请检查API服务' : 'Network error, please check API service', 'error');
+              resetAnalyzeButton(btn);
+            });
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          updateProcess('error', 'status.error');
+          updateStatus('error', 'status.error');
+          showMessage(currentLang === 'zh' ? '处理错误' : 'Processing error', 'error');
+          resetAnalyzeButton(btn);
+        }
+      }
+      
+      function resetAnalyzeButton(btn) {
+        btn.classList.remove('btn-loading');
+        btn.classList.add('btn-primary');
+        btn.innerHTML = '🔍 <span data-i18n="btn.analyze">' + i18n[currentLang]['btn.analyze'] + '</span>';
+      }
+      
+      // 预览输出函数
+      function previewOutput() {
+        var resultText = document.getElementById('aiResultArea').innerText;
+        if (!resultText || resultText.includes(i18n[currentLang]['result.placeholder'])) {
+          showMessage(currentLang === 'zh' ? '请先分析内容生成提示词' : 'Please analyze content first', 'error');
+          return;
+        }
+        var btn = document.getElementById('previewBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="animate-pulse">' + (currentLang === 'zh' ? '生成中...' : 'Generating...') + '</span>';
+        
+        fetch(API_BASE_URL + '/api/preview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: resultText })
+        })
+        .then(function(response) {
+          return response.json();
+        })
+        .then(function(data) {
+          if (data.success) {
+            document.getElementById('textPreview').innerHTML = '<div class="whitespace-pre-wrap">' + data.preview + '</div>';
+            showMessage(currentLang === 'zh' ? '预览生成完成！' : 'Preview generated!');
+          } else {
+            showMessage(data.error || (currentLang === 'zh' ? '预览生成失败' : 'Preview generation failed'), 'error');
+          }
+          resetPreviewButton(btn);
+        })
+        .catch(function(error) {
+          showMessage(currentLang === 'zh' ? '网络错误' : 'Network error', 'error');
+          resetPreviewButton(btn);
+        });
+      }
+      
+      function resetPreviewButton(btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="moon-icon moon-70"></span> <span data-i18n="btn.preview">' + i18n[currentLang]['btn.preview'] + '</span>';
+      }
+      
+      // 下载功能
+      function downloadResult() {
+        var resultText = document.getElementById('aiResultArea').innerText;
+        if (!resultText || resultText.includes(i18n[currentLang]['result.placeholder'])) {
+          showMessage(currentLang === 'zh' ? '没有可下载的内容' : 'No content to download', 'error');
+          return;
+        }
+        
+        var blob = new Blob([resultText], { type: 'text/plain;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'mediaprompt-result-' + new Date().toISOString().slice(0,10) + '.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showMessage(currentLang === 'zh' ? '下载成功！' : 'Download complete!');
+      }
+      
+      // 思考过程折叠
+      document.getElementById('thinkingHeader').addEventListener('click', function() {
+        var content = document.getElementById('thinkingContent');
+        var arrow = document.getElementById('thinkingArrow');
+        content.classList.toggle('hidden');
+        arrow.style.transform = content.classList.contains('hidden') ? '' : 'rotate(180deg)';
+      });
+      
+      // 语言切换按钮事件绑定
+      var langBtns = document.querySelectorAll('.lang-btn');
+      langBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          langBtns.forEach(function(b) {
+            b.classList.remove('active');
+          });
+          this.classList.add('active');
+          currentLang = this.dataset.lang;
+          updateLanguage();
+        });
+      });
+      
+      // 类别选择按钮事件绑定
+      var categoryBtns = document.querySelectorAll('.category-btn');
+      var optionGroups = {
+        document: 'documentOptions',
+        image: 'imageOptions',
+        video: 'videoOptions',
+        website: 'websiteOptions'
+      };
+      
+      categoryBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          categoryBtns.forEach(function(b) {
+            b.classList.remove('bg-white', 'text-gray-800', 'border-gray-600', 'shadow-sm');
+            b.classList.add('text-gray-500', 'border-gray-200');
+          });
+          this.classList.remove('text-gray-500', 'border-gray-200');
+          this.classList.add('bg-white', 'text-gray-800', 'border-gray-600', 'shadow-sm');
+          
+          currentType = this.dataset.type;
+          
+          // 隐藏所有选项组
+          Object.values(optionGroups).forEach(function(id) {
+            document.getElementById(id).classList.add('hidden');
+          });
+          
+          // 显示当前选项组
+          document.getElementById(optionGroups[currentType]).classList.remove('hidden');
+          
+          // 显示/隐藏视频专属选项
+          var videoOptions = document.getElementById('videoSpecificOptions');
+          if (currentType === 'video') {
+            videoOptions.classList.remove('hidden');
+          } else {
+            videoOptions.classList.add('hidden');
+          }
+          
+          // 更新语言（包括文件提示）
+          updateLanguage();
+          
+          // 隐藏所有预览区
+          document.getElementById('imagePreview').classList.add('hidden');
+          document.getElementById('videoPreview').classList.add('hidden');
+          document.getElementById('textPreview').classList.add('hidden');
+          document.getElementById('imageCount').classList.add('hidden');
+          
+          // 根据类型显示对应预览区
+          if (currentType === 'image') {
+            document.getElementById('imagePreview').classList.remove('hidden');
+            document.getElementById('imageCount').classList.remove('hidden');
+            document.getElementById('imageCount').classList.add('flex');
+          } else if (currentType === 'video') {
+            document.getElementById('videoPreview').classList.remove('hidden');
+          } else {
+            document.getElementById('textPreview').classList.remove('hidden');
+          }
+        });
+      });
+      
+      // 输出选项标签点击事件
+      var optionTags = document.querySelectorAll('.option-tag');
+      optionTags.forEach(function(tag) {
+        tag.addEventListener('click', function() {
+          this.classList.toggle('selected');
+        });
+      });
+      
+      // 视频尺寸选择
+      var sizeOptions = document.querySelectorAll('.size-option');
+      sizeOptions.forEach(function(option) {
+        option.addEventListener('click', function() {
+          sizeOptions.forEach(function(o) {
+            o.classList.remove('selected');
+          });
+          this.classList.add('selected');
+          selectedVideoSize = this.dataset.size;
+        });
+      });
+      
+      // 文件输入事件
+      var fileInput = document.getElementById('fileInput');
+      var uploadZone = document.getElementById('uploadZone');
+      
+      fileInput.addEventListener('change', function(e) {
+        if (e.target.files.length > 0) {
+          uploadedFile = e.target.files[0];
+          uploadedContent = '';
+          showMessage((currentLang === 'zh' ? '已选择文件: ' : 'File selected: ') + uploadedFile.name);
+          updateStatus('processing', 'status.processing');
+          updateProcess('done', 'thinking.step1');
+        }
+      });
+      
+      // 拖拽上传事件
+      uploadZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.classList.add('dragover');
+      });
+      
+      uploadZone.addEventListener('dragleave', function() {
+        this.classList.remove('dragover');
+      });
+      
+      uploadZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+        if (e.dataTransfer.files.length > 0) {
+          uploadedFile = e.dataTransfer.files[0];
+          uploadedContent = '';
+          showMessage((currentLang === 'zh' ? '已上传文件: ' : 'File uploaded: ') + uploadedFile.name);
+          updateStatus('processing', 'status.processing');
+          updateProcess('done', 'thinking.step1');
+        }
+      });
+      
+      // 点击上传区域触发文件选择
+      uploadZone.addEventListener('click', function() {
+        fileInput.click();
+      });
+      
+      // 选择文件按钮点击事件
+      var selectFileBtn = document.getElementById('selectFileBtn');
+      selectFileBtn.addEventListener('click', function() {
+        fileInput.click();
+      });
+      
+      // 分析按钮点击事件
+      document.getElementById('analyzeBtn').addEventListener('click', analyzeContent);
+      
+      // 预览按钮点击事件
+      document.getElementById('previewBtn').addEventListener('click', previewOutput);
+      
+      // 复制按钮点击事件
+      document.getElementById('copyBtn').addEventListener('click', function() {
+        var resultArea = document.getElementById('aiResultArea');
+        var copyBtn = this;
+        navigator.clipboard.writeText(resultArea.innerText).then(function() {
+          var originalText = copyBtn.innerHTML;
+          copyBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg><span>' + (currentLang === 'zh' ? '已复制' : 'Copied') + '</span>';
+          copyBtn.classList.remove('text-gray-600');
+          copyBtn.classList.add('text-green-600');
+          setTimeout(function() {
+            copyBtn.innerHTML = originalText;
+            copyBtn.classList.remove('text-green-600');
+            copyBtn.classList.add('text-gray-600');
+          }, 2000);
+        });
+      });
+      
+      // 下载按钮点击事件
+      document.getElementById('downloadBtn').addEventListener('click', downloadResult);
+      
+      // 初始化语言
+      updateLanguage();
+    });
+    
+    // 社交媒体分享函数
+    function shareToWechat() {
+      alert('请截图后分享到微信');
+    }
+    
+    function shareToDouyin() {
+      alert('请截图后分享到抖音');
+    }
+    
+    function shareToXiaohongshu() {
+      alert('请截图后分享到小红书');
+    }
+    
+    function shareToWeibo() {
+      var text = document.getElementById('aiResultArea').innerText;
+      window.open('https://service.weibo.com/share/share.php?title=' + encodeURIComponent(text.substring(0, 140)), '_blank');
+    }
+    
+    function shareToTwitter() {
+      var text = document.getElementById('aiResultArea').innerText;
+      window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text.substring(0, 280)), '_blank');
+    }
+    
+    function shareToFacebook() {
+      window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(window.location.href), '_blank');
+    }
+    
+    function shareToLinkedIn() {
+      window.open('https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(window.location.href), '_blank');
+    }
+    
+    function shareToInstagram() {
+      alert('请截图后分享到Instagram');
+    }
+  </script>
+</body>
+</html>

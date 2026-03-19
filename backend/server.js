@@ -1,6 +1,6 @@
 /**
  * MediaPrompt AI Backend API
- * 对接腾讯云混元大模型 + OpenAI兼容API
+ * 对接腾讯云混元大模型 + 千问VL视频分析
  */
 
 require('dotenv').config();
@@ -12,6 +12,8 @@ const path = require('path');
 const fs = require('fs');
 const https = require('https');
 const { URL } = require('url');
+const { getVideoInfo, compressVideo, smartCompress, extractKeyFrames } = require('./utils/video-compress');
+const { analyzeVideoFrames, QWEN_CONFIG } = require('./utils/qwen-vl-analyzer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -23,7 +25,7 @@ app.use(express.json({ limit: '50mb' }));
 // 文件上传配置
 const upload = multer({ 
   dest: 'uploads/',
-  limits: { fileSize: 50 * 1024 * 1024 }
+  limits: { fileSize: 100 * 1024 * 1024 }  // 上限100MB
 });
 
 // 配置
@@ -180,6 +182,172 @@ app.post('/api/preview', async (req, res) => {
       message: error.message 
     });
   }
+});
+
+// ==================== 视频处理 API ====================
+
+// 获取视频信息
+app.post('/api/video/info', upload.single('video'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: '缺少视频文件' });
+    }
+
+    const videoPath = req.file.path;
+    const info = await getVideoInfo(videoPath);
+    
+    // 清理临时文件
+    fs.unlinkSync(videoPath);
+    
+    res.json({
+      success: true,
+      info: {
+        width: info.width,
+        height: info.height,
+        duration: info.duration.toFixed(1),
+        fileSize: info.fileSize.toFixed(2),
+        fileSizeBytes: info.fileSizeBytes,
+        needsCompression: info.fileSize > 50  // 超过50MB需要压缩
+      },
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('获取视频信息失败:', error);
+    res.status(500).json({ 
+      error: '获取视频信息失败', 
+      message: error.message 
+    });
+  }
+});
+
+// 视频压缩
+app.post('/api/video/compress', upload.single('video'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: '缺少视频文件' });
+    }
+
+    const { quality = 'medium' } = req.body;
+    const inputPath = req.file.path;
+    const outputPath = inputPath.replace(/\.[^.]+$/, '_compressed.mp4');
+    
+    console.log(`开始压缩视频: ${inputPath}, 质量级别: ${quality}`);
+    
+    const result = await compressVideo(inputPath, outputPath, quality);
+    
+    // 清理原始文件
+    if (fs.existsSync(inputPath)) {
+      fs.unlinkSync(inputPath);
+    }
+    
+    // 读取压缩后的文件并返回
+    const compressedBuffer = fs.readFileSync(outputPath);
+    const compressedBase64 = compressedBuffer.toString('base64');
+    
+    // 清理压缩后的临时文件
+    fs.unlinkSync(outputPath);
+    
+    res.json({
+      success: true,
+      originalSize: result.originalSize.toFixed(2),
+      compressedSize: result.compressedSize.toFixed(2),
+      compressionRatio: result.compressionRatio,
+      videoData: `data:video/mp4;base64,${compressedBase64}`,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('视频压缩失败:', error);
+    res.status(500).json({ 
+      error: '视频压缩失败', 
+      message: error.message 
+    });
+  }
+});
+
+// 视频分析（使用千问VL）
+app.post('/api/analyze/video', upload.single('video'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: '缺少视频文件' });
+    }
+
+    const { outputOptions = ['prompt'], compress = 'auto' } = req.body;
+    const inputPath = req.file.path;
+    
+    console.log(`开始分析视频: ${inputPath}, 压缩选项: ${compress}`);
+    
+    // 1. 获取原始视频信息
+    const originalInfo = await getVideoInfo(inputPath);
+    let videoPath = inputPath;
+    
+    // 2. 如果需要压缩或文件太大，自动压缩
+    let compressedFilePath = null;
+    if (compress === 'auto' && originalInfo.fileSize > 50) {
+      console.log('视频文件过大，进行自动压缩...');
+      compressedFilePath = inputPath.replace(/\.[^.]+$/, '_compressed.mp4');
+      const compressResult = await compressVideo(inputPath, compressedFilePath, 'medium');
+      console.log(`压缩完成: ${compressResult.compressionRatio}%`);
+      videoPath = compressedFilePath;
+    }
+    
+    // 3. 提取关键帧
+    const framesDir = path.join('uploads', 'frames', Date.now().toString());
+    const framePaths = await extractKeyFrames(videoPath, framesDir, 8);
+    console.log(`提取了 ${framePaths.length} 个关键帧`);
+    
+    // 4. 将帧转为base64（简化处理，避免额外上传）
+    const frameDataUrls = framePaths.map(framePath => {
+      const buffer = fs.readFileSync(framePath);
+      const base64 = buffer.toString('base64');
+      return `data:image/jpeg;base64,${base64}`;
+    });
+    
+    // 5. 调用千问VL分析
+    console.log('调用千问VL API分析视频...');
+    const analysisResult = await analyzeVideoFrames(frameDataUrls, outputOptions);
+    
+    // 6. 清理临时文件
+    try {
+      if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+      if (compressedFilePath && fs.existsSync(compressedFilePath)) fs.unlinkSync(compressedFilePath);
+      framePaths.forEach(f => fs.existsSync(f) && fs.unlinkSync(f));
+      if (fs.existsSync(framesDir)) fs.rmdirSync(framesDir);
+    } catch (e) {
+      console.error('清理临时文件失败:', e);
+    }
+    
+    res.json({
+      success: true,
+      category: 'video',
+      outputOptions,
+      result: analysisResult,
+      videoInfo: {
+        originalSize: originalInfo.fileSize.toFixed(2),
+        duration: originalInfo.duration.toFixed(1),
+        frameCount: framePaths.length,
+        wasCompressed: !!compressedFilePath
+      },
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('视频分析失败:', error);
+    res.status(500).json({ 
+      error: '视频分析失败', 
+      message: error.message 
+    });
+  }
+});
+
+// 千问VL配置检查
+app.get('/api/qwen/status', (req, res) => {
+  res.json({
+    configured: !!QWEN_CONFIG.apiKey,
+    model: QWEN_CONFIG.model,
+    apiKeyPrefix: QWEN_CONFIG.apiKey ? QWEN_CONFIG.apiKey.substring(0, 10) + '...' : '未配置'
+  });
 });
 
 // ==================== 核心函数 ====================

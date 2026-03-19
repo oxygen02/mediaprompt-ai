@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediaPrompt AI - 测试版</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #f5f5f7; min-height: 100vh; font-family: -apple-system, 'PingFang SC', sans-serif; }
+    .btn-active { background: #52525b; color: white; }
+    .btn-inactive { background: white; color: #71717a; }
+    .tag-selected { background: #e4e4e7; border-color: #71717a; }
+  </style>
+</head>
+<body class="p-8">
+  <div class="max-w-4xl mx-auto">
+    <!-- 语言切换 -->
+    <div class="mb-6 flex items-center gap-2">
+      <span class="text-sm text-gray-500">语言：</span>
+      <button id="btnZh" class="btn-active px-3 py-1 rounded text-xs">中文</button>
+      <button id="btnEn" class="btn-inactive px-3 py-1 rounded text-xs">EN</button>
+      <span id="langStatus" class="text-xs text-green-500 ml-4"></span>
+    </div>
+
+    <!-- 类别选择 -->
+    <div class="mb-6">
+      <span class="text-sm text-gray-500">类别：</span>
+      <div class="flex gap-2 mt-2">
+        <button id="btnDoc" class="btn-active px-4 py-1.5 rounded-lg text-sm border border-gray-300">📄 文档</button>
+        <button id="btnImg" class="btn-inactive px-4 py-1.5 rounded-lg text-sm border border-gray-200">🖼️ 图片</button>
+        <button id="btnVid" class="btn-inactive px-4 py-1.5 rounded-lg text-sm border border-gray-200">🎬 视频</button>
+        <button id="btnWeb" class="btn-inactive px-4 py-1.5 rounded-lg text-sm border border-gray-200">🌐 网页</button>
+      </div>
+    </div>
+
+    <!-- 视频专属选项 -->
+    <div id="videoOptions" class="hidden mb-6 p-4 bg-white rounded-xl border border-gray-200">
+      <h3 class="text-sm font-medium text-gray-600 mb-3">🎬 视频专属选项</h3>
+      <div class="mb-3">
+        <span class="text-sm text-gray-500">📐 视频尺寸：</span>
+        <div class="flex gap-2 mt-2">
+          <button class="aspect-btn btn-active px-3 py-1 rounded text-xs border" data-aspect="16:9">16:9</button>
+          <button class="aspect-btn btn-inactive px-3 py-1 rounded text-xs border" data-aspect="9:16">9:16</button>
+          <button class="aspect-btn btn-inactive px-3 py-1 rounded text-xs border" data-aspect="4:3">4:3</button>
+          <button class="aspect-btn btn-inactive px-3 py-1 rounded text-xs border" data-aspect="1:1">1:1</button>
+        </div>
+      </div>
+      <div>
+        <span class="text-sm text-gray-500">🎙️ 同期AI配音：</span>
+        <input type="text" class="w-full mt-2 px-4 py-2 border border-gray-200 rounded-lg text-sm" placeholder="输入配音文字...">
+      </div>
+    </div>
+
+    <!-- 输出选项 -->
+    <div class="mb-6">
+      <span class="text-sm text-gray-500">输出选项：</span>
+      <div id="outputTags" class="flex gap-2 flex-wrap mt-2">
+        <button class="tag-btn tag-selected px-3 py-1 rounded-full text-sm border border-gray-300">提示词整合</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200">场景描述</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200">风格设定</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200">光影效果</button>
+      </div>
+    </div>
+
+    <!-- 状态显示 -->
+    <div class="p-4 bg-gray-100 rounded-lg">
+      <p class="text-sm text-gray-600">当前状态：</p>
+      <p id="status" class="text-sm font-medium text-gray-800 mt-1">语言: 中文 | 类别: 文档</p>
+    </div>
+  </div>
+
+  <script>
+    // 全局变量
+    var currentLang = 'zh';
+    var currentType = 'document';
+
+    // 语言切换
+    document.getElementById('btnZh').onclick = function() {
+      currentLang = 'zh';
+      this.className = 'btn-active px-3 py-1 rounded text-xs';
+      document.getElementById('btnEn').className = 'btn-inactive px-3 py-1 rounded text-xs';
+      updateStatus();
+      document.getElementById('langStatus').textContent = '✓ 已切换到中文';
+      setTimeout(function() { document.getElementById('langStatus').textContent = ''; }, 2000);
+    };
+
+    document.getElementById('btnEn').onclick = function() {
+      currentLang = 'en';
+      this.className = 'btn-active px-3 py-1 rounded text-xs';
+      document.getElementById('btnZh').className = 'btn-inactive px-3 py-1 rounded text-xs';
+      updateStatus();
+      document.getElementById('langStatus').textContent = '✓ Switched to English';
+      setTimeout(function() { document.getElementById('langStatus').textContent = ''; }, 2000);
+    };
+
+    // 类别切换
+    var categoryBtns = {
+      document: document.getElementById('btnDoc'),
+      image: document.getElementById('btnImg'),
+      video: document.getElementById('btnVid'),
+      website: document.getElementById('btnWeb')
+    };
+
+    function switchCategory(type) {
+      currentType = type;
+      for (var key in categoryBtns) {
+        if (key === type) {
+          categoryBtns[key].className = 'btn-active px-4 py-1.5 rounded-lg text-sm border border-gray-300';
+        } else {
+          categoryBtns[key].className = 'btn-inactive px-4 py-1.5 rounded-lg text-sm border border-gray-200';
+        }
+      }
+      // 显示/隐藏视频选项
+      document.getElementById('videoOptions').style.display = type === 'video' ? 'block' : 'none';
+      updateStatus();
+    }
+
+    document.getElementById('btnDoc').onclick = function() { switchCategory('document'); };
+    document.getElementById('btnImg').onclick = function() { switchCategory('image'); };
+    document.getElementById('btnVid').onclick = function() { switchCategory('video'); };
+    document.getElementById('btnWeb').onclick = function() { switchCategory('website'); };
+
+    // 视频尺寸按钮
+    var aspectBtns = document.querySelectorAll('.aspect-btn');
+    for (var i = 0; i < aspectBtns.length; i++) {
+      aspectBtns[i].onclick = function() {
+        for (var j = 0; j < aspectBtns.length; j++) {
+          aspectBtns[j].className = 'aspect-btn btn-inactive px-3 py-1 rounded text-xs border';
+        }
+        this.className = 'aspect-btn btn-active px-3 py-1 rounded text-xs border';
+      };
+    }
+
+    // 输出选项标签
+    var tagBtns = document.querySelectorAll('.tag-btn');
+    for (var i = 0; i < tagBtns.length; i++) {
+      tagBtns[i].onclick = function() {
+        this.classList.toggle('tag-selected');
+      };
+    }
+
+    // 更新状态显示
+    function updateStatus() {
+      var langText = currentLang === 'zh' ? '中文' : 'English';
+      var typeText = { document: '文档', image: '图片', video: '视频', website: '网页' }[currentType];
+      document.getElementById('status').textContent = '语言: ' + langText + ' | 类别: ' + typeText;
+    }
+  </script>
+</body>
+</html>

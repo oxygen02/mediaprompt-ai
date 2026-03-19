@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https:; img-src 'self' data: https:; font-src 'self' https: data:;">
+  <title>MediaPrompt AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+    body { background: #f5f5f7; min-height: 100vh; }
+    .sidebar { background: #ffffff; border-right: 1px solid #e5e5e5; position: fixed; top: 0; left: 0; height: 100vh; z-index: 20; width: 208px; }
+    .main-content { margin-left: 208px; min-height: 100vh; }
+    .nav-item { padding: 12px 20px; cursor: pointer; transition: all 0.15s; }
+    .nav-item:hover { background: #f5f5f7; }
+    .nav-item.active { background: #e8e8ed; }
+    .upload-zone { background: #ffffff; border: 2px dashed #d1d1d6; padding: 32px; text-align: center; transition: all 0.2s; cursor: pointer; }
+    .upload-zone:hover { border-color: #52525b; background: #fafafa; }
+    .btn-primary { background: #52525b; color: white; padding: 10px 20px; border-radius: 8px; cursor: pointer; border: none; }
+    .btn-primary:hover { background: #3f3f46; }
+    .btn-secondary { background: white; border: 1px solid #e5e5e5; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+    .output-card { background: #ffffff; border: 1px solid #e5e5e5; padding: 16px; border-radius: 12px; }
+    .prompt-block { background: #fafafa; border-left: 3px solid #52525b; padding: 8px 12px; margin-bottom: 8px; border-radius: 0 6px 6px 0; }
+    .hidden { display: none !important; }
+    .tag-selected { background: #e4e4e7; border-color: #71717a; }
+    .btn-active { background: #52525b; color: white; }
+    .btn-inactive { background: white; color: #71717a; border: 1px solid #e5e5e5; }
+    .thinking-step { padding: 4px 0; color: #666; font-size: 12px; }
+    .thinking-step.done { color: #16a34a; }
+    .social-btn { width: 32px; height: 32px; border-radius: 50%; border: 1px solid #e5e5e5; background: white; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .social-btn:hover { background: #f5f5f7; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .pulse { animation: pulse 1.5s ease-in-out infinite; }
+  </style>
+</head>
+<body>
+  <!-- 左侧导航 -->
+  <div class="sidebar">
+    <div class="p-4 border-b border-gray-200">
+      <h2 class="font-semibold text-gray-800">MediaPrompt AI</h2>
+    </div>
+    <nav>
+      <div class="text-xs text-gray-400 px-4 py-2">分析工具</div>
+      <div class="nav-item active" id="navDoc">📄 文档分析</div>
+      <div class="nav-item" id="navImg">🖼️ 图片分析</div>
+      <div class="nav-item" id="navVid">🎬 视频分析</div>
+      <div class="nav-item" id="navWeb">🌐 网页分析</div>
+      <div class="text-xs text-gray-400 px-4 py-2 mt-4">案例展示</div>
+      <div class="nav-item">📁 文档案例</div>
+      <div class="nav-item">🖼️ 图片案例</div>
+      <div class="nav-item">🎬 视频案例</div>
+      <div class="nav-item">🌐 网页案例</div>
+      <div class="text-xs text-gray-400 px-4 py-2 mt-4">个人中心</div>
+      <div class="nav-item">📜 历史记录</div>
+      <div class="nav-item">⚙️ 设置</div>
+    </nav>
+  </div>
+
+  <!-- 主内容 -->
+  <div class="main-content p-6">
+    <!-- 顶部导航 -->
+    <nav class="flex items-center justify-between h-14 bg-white border-b border-gray-200 px-6 mb-4">
+      <div class="text-xl font-bold">MediaPrompt AI</div>
+      <div class="flex items-center gap-4">
+        <button id="btnZh" class="btn-active px-3 py-1 rounded text-xs">中文</button>
+        <button id="btnEn" class="btn-inactive px-3 py-1 rounded text-xs">EN</button>
+        <span class="text-sm text-gray-500 cursor-pointer">登录</span>
+        <button class="btn-primary text-sm">注册</button>
+      </div>
+    </nav>
+
+    <!-- 副标题区域 -->
+    <div class="bg-white border-b border-gray-200 px-6 py-3 mb-6">
+      <p class="text-sm text-gray-500 text-center mb-3" id="subtitle">上传你喜欢的内容，提炼有效提示词，让美好可以复刻迭代</p>
+      <div class="flex gap-2 justify-center">
+        <button id="btnDoc" class="btn-active px-4 py-1.5 rounded-lg text-sm border border-gray-300">📄 文档</button>
+        <button id="btnImg" class="btn-inactive px-4 py-1.5 rounded-lg text-sm border">🖼️ 图片</button>
+        <button id="btnVid" class="btn-inactive px-4 py-1.5 rounded-lg text-sm border">🎬 视频</button>
+        <button id="btnWeb" class="btn-inactive px-4 py-1.5 rounded-lg text-sm border">🌐 网页</button>
+      </div>
+    </div>
+
+    <!-- 上传区域 -->
+    <div class="upload-zone mb-6" id="uploadZone">
+      <p class="text-gray-600 mb-2" id="uploadText">拖拽文件到此处，或点击上传</p>
+      <p class="text-gray-400 text-xs" id="fileHint">支持 Word/PDF/TXT/Markdown</p>
+      <input type="file" id="fileInput" class="hidden">
+    </div>
+
+    <!-- 模型选择 -->
+    <div class="mb-4">
+      <select id="modelSelect" class="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white">
+        <option value="auto">🤖 自动选择</option>
+        <option value="qwen-plus">千问3VL-Plus (推荐)</option>
+        <option value="qwen-flash">千问3VL-Flash (快速)</option>
+      </select>
+    </div>
+
+    <!-- 开始分析按钮 -->
+    <div class="mb-6">
+      <button id="analyzeBtn" class="btn-primary w-full text-sm">🚀 开始分析</button>
+    </div>
+
+    <!-- AI思考过程 -->
+    <div id="thinkingSection" class="hidden mb-6 p-4 bg-white rounded-xl border border-gray-200">
+      <div class="flex items-center justify-between cursor-pointer" id="thinkingHeader">
+        <h3 class="text-sm font-medium text-gray-600">🧠 AI思考过程</h3>
+        <span id="thinkingToggle">▼</span>
+      </div>
+      <div id="thinkingContent" class="mt-3">
+        <div class="thinking-step" id="step1">⏳ 解析文件格式...</div>
+        <div class="thinking-step" id="step2">⏳ 提取关键内容...</div>
+        <div class="thinking-step" id="step3">⏳ 分析结构...</div>
+        <div class="thinking-step" id="step4">⏳ 生成提示词...</div>
+      </div>
+    </div>
+
+    <!-- 输出选项 -->
+    <div class="mb-6">
+      <h3 class="text-sm font-medium text-gray-600 mb-2">输出选项</h3>
+      <div id="documentOptions" class="flex gap-2 flex-wrap">
+        <button class="tag-btn tag-selected px-3 py-1 rounded-full text-sm border border-gray-300">提示词整合</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200">功能列表</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200">MVP文档</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200">技术栈</button>
+      </div>
+      <div id="imageOptions" class="hidden flex gap-2 flex-wrap">
+        <button class="tag-btn tag-selected px-3 py-1 rounded-full text-sm border border-gray-300">提示词整合</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200">场景描述</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200">风格设定</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200">光线与氛围</button>
+      </div>
+      <div id="videoOptions" class="hidden flex gap-2 flex-wrap">
+        <button class="tag-btn tag-selected px-3 py-1 rounded-full text-sm border border-gray-300">提示词整合</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200">场景描述</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200">风格</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200">光影</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200">主体与动作</button>
+      </div>
+      <div id="websiteOptions" class="hidden flex gap-2 flex-wrap">
+        <button class="tag-btn tag-selected px-3 py-1 rounded-full text-sm border border-gray-300">提示词整合</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200">功能列表</button>
+        <button class="tag-btn px-3 py-1 rounded-full text-sm border border-gray-200">MVP文档</button>
+      </div>
+    </div>
+
+    <!-- 视频专属选项 -->
+    <div id="videoSection" class="hidden mb-6 p-4 bg-white rounded-xl border border-gray-200">
+      <h3 class="text-sm font-medium text-gray-600 mb-3">🎬 视频专属选项</h3>
+      <div class="mb-3">
+        <span class="text-sm text-gray-500">📐 视频尺寸：</span>
+        <div class="flex gap-2 mt-2">
+          <button class="aspect-btn btn-active px-3 py-1 rounded text-xs border" data-aspect="16:9">16:9</button>
+          <button class="aspect-btn btn-inactive px-3 py-1 rounded text-xs border" data-aspect="9:16">9:16</button>
+          <button class="aspect-btn btn-inactive px-3 py-1 rounded text-xs border" data-aspect="4:3">4:3</button>
+          <button class="aspect-btn btn-inactive px-3 py-1 rounded text-xs border" data-aspect="1:1">1:1</button>
+        </div>
+      </div>
+      <div>
+        <span class="text-sm text-gray-500">🎙️ 同期AI配音：</span>
+        <input type="text" class="w-full mt-2 px-4 py-2 border border-gray-200 rounded-lg text-sm" placeholder="输入配音文字..." id="voiceoverInput">
+      </div>
+    </div>
+
+    <!-- 结果输出区 -->
+    <div id="resultSection" class="hidden mb-6">
+      <h3 class="text-sm font-medium text-gray-600 mb-2">📝 分析结果</h3>
+      <div class="output-card">
+        <div class="prompt-block">
+          <div class="text-xs text-gray-500 mb-1">Role</div>
+          <div class="text-sm">专业媒体内容分析师</div>
+        </div>
+        <div class="prompt-block">
+          <div class="text-xs text-gray-500 mb-1">Background</div>
+          <div class="text-sm">基于用户上传的媒体内容，提炼有效的AI提示词</div>
+        </div>
+        <div class="prompt-block">
+          <div class="text-xs text-gray-500 mb-1">Skills</div>
+          <div class="text-sm">• 内容分析 • 提示词生成 • 结构化输出</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div id="actionButtons" class="hidden mb-6 flex gap-2">
+      <button class="btn-secondary text-sm" id="downloadBtn">📥 下载</button>
+      <button class="btn-secondary text-sm" id="copyBtn">📋 复制</button>
+    </div>
+
+    <!-- 社交分享 -->
+    <div id="shareSection" class="hidden mb-6">
+      <h3 class="text-sm font-medium text-gray-600 mb-2">📤 分享到</h3>
+      <div id="shareZh" class="flex gap-2">
+        <button class="social-btn" data-platform="wechat" title="微信">💬</button>
+        <button class="social-btn" data-platform="weibo" title="微博">📢</button>
+        <button class="social-btn" data-platform="xiaohongshu" title="小红书">📕</button>
+      </div>
+      <div id="shareEn" class="hidden flex gap-2">
+        <button class="social-btn" data-platform="twitter" title="X">✖️</button>
+        <button class="social-btn" data-platform="facebook" title="Facebook">📘</button>
+        <button class="social-btn" data-platform="linkedin" title="LinkedIn">💼</button>
+      </div>
+    </div>
+
+    <!-- 预览区 -->
+    <div class="mb-6">
+      <h3 class="text-sm font-medium text-gray-600 mb-2">✨ 创意类似+</h3>
+      <div class="output-card min-h-[120px]">
+        <p class="text-gray-400 text-sm">预览结果将显示在这里...</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ====== 全局变量 ======
+    var currentLang = 'zh';
+    var currentType = 'document';
+    var currentAspect = '16:9';
+    var isThinking = false;
+    var thinkingExpanded = true;
+
+    // ====== DOM加载完成后绑定事件 ======
+    document.addEventListener('DOMContentLoaded', function() {
+      // 语言切换按钮
+      document.getElementById('btnZh').addEventListener('click', function() { switchLang('zh'); });
+      document.getElementById('btnEn').addEventListener('click', function() { switchLang('en'); });
+
+      // 类别切换按钮
+      document.getElementById('btnDoc').addEventListener('click', function() { switchCategory('document'); });
+      document.getElementById('btnImg').addEventListener('click', function() { switchCategory('image'); });
+      document.getElementById('btnVid').addEventListener('click', function() { switchCategory('video'); });
+      document.getElementById('btnWeb').addEventListener('click', function() { switchCategory('website'); });
+
+      // 导航切换
+      document.getElementById('navDoc').addEventListener('click', function() { switchNav(this); });
+      document.getElementById('navImg').addEventListener('click', function() { switchNav(this); });
+      document.getElementById('navVid').addEventListener('click', function() { switchNav(this); });
+      document.getElementById('navWeb').addEventListener('click', function() { switchNav(this); });
+
+      // 上传区域点击
+      document.getElementById('uploadZone').addEventListener('click', function() {
+        document.getElementById('fileInput').click();
+      });
+
+      // 开始分析按钮
+      document.getElementById('analyzeBtn').addEventListener('click', startAnalyze);
+
+      // 思考过程折叠
+      document.getElementById('thinkingHeader').addEventListener('click', toggleThinking);
+
+      // 选项标签按钮
+      var tagBtns = document.querySelectorAll('.tag-btn');
+      for (var i = 0; i < tagBtns.length; i++) {
+        tagBtns[i].addEventListener('click', function() { toggleTag(this); });
+      }
+
+      // 视频尺寸按钮
+      var aspectBtns = document.querySelectorAll('.aspect-btn');
+      for (var i = 0; i < aspectBtns.length; i++) {
+        aspectBtns[i].addEventListener('click', function() { switchAspect(this); });
+      }
+
+      // 下载和复制按钮
+      document.getElementById('downloadBtn').addEventListener('click', downloadResult);
+      document.getElementById('copyBtn').addEventListener('click', copyResult);
+
+      // 社交分享按钮
+      var socialBtns = document.querySelectorAll('.social-btn');
+      for (var i = 0; i < socialBtns.length; i++) {
+        socialBtns[i].addEventListener('click', function() { shareTo(this.dataset.platform); });
+      }
+
+      console.log('MediaPrompt AI - All event listeners initialized successfully');
+    });
+
+    // ====== 语言切换 ======
+    function switchLang(lang) {
+      currentLang = lang;
+      document.getElementById('btnZh').className = lang === 'zh' ? 'btn-active px-3 py-1 rounded text-xs' : 'btn-inactive px-3 py-1 rounded text-xs';
+      document.getElementById('btnEn').className = lang === 'en' ? 'btn-active px-3 py-1 rounded text-xs' : 'btn-inactive px-3 py-1 rounded text-xs';
+      // 切换分享按钮
+      document.getElementById('shareZh').className = lang === 'zh' ? 'flex gap-2' : 'hidden flex gap-2';
+      document.getElementById('shareEn').className = lang === 'en' ? 'flex gap-2' : 'hidden flex gap-2';
+      updateLanguage();
+    }
+
+    function updateLanguage() {
+      var texts = {
+        zh: {
+          subtitle: '上传你喜欢的内容，提炼有效提示词，让美好可以复刻迭代',
+          uploadText: '拖拽文件到此处，或点击上传',
+          fileHint: { document: '支持 Word/PDF/TXT/Markdown', image: '支持 JPG/PNG/WebP/GIF', video: '支持 MP4/MOV，建议30秒内', website: '支持 URL/网页截图' }
+        },
+        en: {
+          subtitle: 'Upload content you like, extract effective prompts',
+          uploadText: 'Drag file here, or click to upload',
+          fileHint: { document: 'Support Word/PDF/TXT/Markdown', image: 'Support JPG/PNG/WebP/GIF', video: 'Support MP4/MOV, within 30 seconds', website: 'Support URL/Screenshot' }
+        }
+      };
+      document.getElementById('subtitle').textContent = texts[currentLang].subtitle;
+      document.getElementById('uploadText').textContent = texts[currentLang].uploadText;
+      document.getElementById('fileHint').textContent = texts[currentLang].fileHint[currentType];
+    }
+
+    // ====== 类别切换 ======
+    function switchCategory(type) {
+      currentType = type;
+      var btns = { document: 'btnDoc', image: 'btnImg', video: 'btnVid', website: 'btnWeb' };
+      for (var key in btns) {
+        document.getElementById(btns[key]).className = key === type ? 'btn-active px-4 py-1.5 rounded-lg text-sm border border-gray-300' : 'btn-inactive px-4 py-1.5 rounded-lg text-sm border';
+      }
+      var options = { document: 'documentOptions', image: 'imageOptions', video: 'videoOptions', website: 'websiteOptions' };
+      for (var key in options) {
+        document.getElementById(options[key]).className = key === type ? 'flex gap-2 flex-wrap' : 'hidden flex gap-2 flex-wrap';
+      }
+      document.getElementById('videoSection').style.display = type === 'video' ? 'block' : 'none';
+      updateLanguage();
+    }
+
+    // ====== 导航切换 ======
+    function switchNav(el) {
+      var navItems = document.querySelectorAll('.nav-item');
+      for (var i = 0; i < navItems.length; i++) {
+        navItems[i].classList.remove('active');
+      }
+      el.classList.add('active');
+    }
+
+    // ====== 视频尺寸 ======
+    function switchAspect(el) {
+      var btns = document.querySelectorAll('.aspect-btn');
+      for (var i = 0; i < btns.length; i++) {
+        btns[i].className = 'aspect-btn btn-inactive px-3 py-1 rounded text-xs border';
+      }
+      el.className = 'aspect-btn btn-active px-3 py-1 rounded text-xs border';
+      currentAspect = el.dataset.aspect;
+    }
+
+    // ====== 选项标签 ======
+    function toggleTag(el) {
+      el.classList.toggle('tag-selected');
+    }
+
+    // ====== 开始分析 ======
+    function startAnalyze() {
+      // 显示思考过程
+      document.getElementById('thinkingSection').classList.remove('hidden');
+      
+      // 模拟分析过程
+      setTimeout(function() {
+        document.getElementById('step1').innerHTML = '✅ 解析文件格式完成';
+        document.getElementById('step1').classList.add('done');
+      }, 500);
+      
+      setTimeout(function() {
+        document.getElementById('step2').innerHTML = '✅ 提取关键内容完成';
+        document.getElementById('step2').classList.add('done');
+      }, 1000);
+      
+      setTimeout(function() {
+        document.getElementById('step3').innerHTML = '✅ 分析结构完成';
+        document.getElementById('step3').classList.add('done');
+      }, 1500);
+      
+      setTimeout(function() {
+        document.getElementById('step4').innerHTML = '✅ 生成提示词完成';
+        document.getElementById('step4').classList.add('done');
+        // 显示结果
+        document.getElementById('resultSection').classList.remove('hidden');
+        document.getElementById('actionButtons').classList.remove('hidden');
+        document.getElementById('shareSection').classList.remove('hidden');
+      }, 2000);
+    }
+
+    // ====== 折叠思考过程 ======
+    function toggleThinking() {
+      thinkingExpanded = !thinkingExpanded;
+      document.getElementById('thinkingContent').style.display = thinkingExpanded ? 'block' : 'none';
+      document.getElementById('thinkingToggle').textContent = thinkingExpanded ? '▼' : '▶';
+    }
+
+    // ====== 下载结果 ======
+    function downloadResult() {
+      var text = 'Role: 专业媒体内容分析师\n\nBackground: 基于用户上传的媒体内容，提炼有效的AI提示词\n\nSkills:\n• 内容分析\n• 提示词生成\n• 结构化输出';
+      var blob = new Blob([text], { type: 'text/plain' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'mediaprompt-result.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // ====== 复制结果 ======
+    function copyResult() {
+      var text = 'Role: 专业媒体内容分析师\n\nBackground: 基于用户上传的媒体内容，提炼有效的AI提示词';
+      navigator.clipboard.writeText(text).then(function() {
+        alert(currentLang === 'zh' ? '已复制到剪贴板' : 'Copied to clipboard');
+      });
+    }
+
+    // ====== 社交分享 ======
+    function shareTo(platform) {
+      var messages = {
+        wechat: '请使用微信扫一扫分享',
+        weibo: '正在分享到微博...',
+        xiaohongshu: '请使用小红书APP分享',
+        twitter: '正在分享到 X...',
+        facebook: '正在分享到 Facebook...',
+        linkedin: '正在分享到 LinkedIn...'
+      };
+      alert(messages[platform] || '分享功能开发中...');
+    }
+  </script>
+</body>
+</html>

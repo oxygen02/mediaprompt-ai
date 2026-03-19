@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediaPrompt AI - 内容反向提示词工具</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+    body { background: #f7f7f8; min-height: 100vh; }
+    
+    /* 千问风格 - 主容器 */
+    .chat-container { max-width: 900px; margin: 0 auto; padding: 20px; }
+    
+    /* 头部 */
+    .header { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid #e5e5e5; margin-bottom: 20px; }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+    .logo-icon svg { width: 20px; height: 20px; color: white; }
+    .logo-text { font-size: 18px; font-weight: 600; color: #1f2937; }
+    
+    /* 上传区域 */
+    .upload-area { background: white; border: 2px dashed #d1d5db; border-radius: 12px; padding: 32px; text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 16px; }
+    .upload-area:hover { border-color: #6366f1; background: #faf5ff; }
+    .upload-area.dragover { border-color: #6366f1; background: #ede9fe; }
+    .upload-icon { width: 48px; height: 48px; background: #f3f4f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
+    .upload-icon svg { width: 24px; height: 24px; color: #6b7280; }
+    
+    /* 已上传文件 */
+    .uploaded-file { display: flex; align-items: center; gap: 12px; background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; }
+    .file-preview { width: 80px; height: 80px; background: #1f2937; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .file-preview img, .file-preview video { max-width: 100%; max-height: 100%; }
+    .file-info { flex: 1; }
+    .file-name { font-size: 14px; font-weight: 500; color: #1f2937; margin-bottom: 4px; }
+    .file-meta { font-size: 12px; color: #6b7280; }
+    .file-remove { width: 32px; height: 32px; border-radius: 8px; border: none; background: #fee2e2; color: #ef4444; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    
+    /* 操作按钮 */
+    .action-bar { display: flex; gap: 12px; margin-bottom: 24px; }
+    .btn { padding: 12px 24px; border-radius: 10px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; border: none; }
+    .btn-primary { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .btn-secondary { background: white; border: 1px solid #e5e7eb; color: #374151; }
+    .btn-secondary:hover { background: #f9fafb; }
+    
+    /* AI消息容器 */
+    .ai-message { background: white; border: 1px solid #e5e5e5; border-radius: 16px; overflow: hidden; }
+    
+    /* 思考过程 - 千问风格 */
+    .thinking-section { background: #f9fafb; border-bottom: 1px solid #e5e5e5; }
+    .thinking-header { padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+    .thinking-left { display: flex; align-items: center; gap: 10px; }
+    .thinking-icon { width: 24px; height: 24px; background: #e0e7ff; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+    .thinking-icon svg { width: 14px; height: 14px; color: #4f46e5; }
+    .thinking-label { font-size: 14px; font-weight: 500; color: #374151; }
+    .thinking-toggle { display: flex; align-items: center; gap: 8px; }
+    .thinking-toggle-icon { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; }
+    .thinking-toggle-icon.expanded { transform: rotate(180deg); }
+    .thinking-time { font-size: 13px; color: #6b7280; }
+    
+    .thinking-content { padding: 0 20px 16px; display: none; }
+    .thinking-content.show { display: block; }
+    .thinking-steps { background: white; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px 16px; }
+    .thinking-step { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+    .thinking-step:last-child { margin-bottom: 0; }
+    .thinking-step-dot { width: 6px; height: 6px; background: #6366f1; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+    .thinking-step-text { font-size: 13px; color: #4b5563; line-height: 1.5; }
+    .thinking-step.active .thinking-step-dot { animation: pulse 1s infinite; }
+    .thinking-step.done .thinking-step-dot { background: #22c55e; }
+    
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    
+    /* 结果区域 */
+    .result-section { padding: 20px; }
+    
+    /* 结果块 */
+    .result-block { margin-bottom: 20px; }
+    .result-block:last-child { margin-bottom: 0; }
+    .result-block-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .result-block-icon { width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+    .result-block-icon.video { background: #dbeafe; }
+    .result-block-icon.video svg { color: #3b82f6; }
+    .result-block-icon.style { background: #fce7f3; }
+    .result-block-icon.style svg { color: #ec4899; }
+    .result-block-icon.camera { background: #d1fae5; }
+    .result-block-icon.camera svg { color: #10b981; }
+    .result-block-icon.prompt { background: #fef3c7; }
+    .result-block-icon.prompt svg { color: #f59e0b; }
+    .result-block-title { font-size: 14px; font-weight: 600; color: #1f2937; }
+    .result-block-tag { font-size: 11px; color: #6b7280; background: #f3f4f6; padding: 2px 8px; border-radius: 4px; }
+    
+    .result-block-content { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px 16px; font-size: 14px; color: #374151; line-height: 1.7; }
+    .result-block-content.highlight { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-color: #fcd34d; }
+    
+    /* 复制按钮 */
+    .copy-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: white; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; color: #374151; cursor: pointer; transition: all 0.2s; margin-top: 12px; }
+    .copy-btn:hover { background: #f9fafb; border-color: #d1d5db; }
+    .copy-btn.copied { background: #dcfce7; border-color: #22c55e; color: #16a34a; }
+    
+    /* 打字光标 */
+    .typing-cursor { display: inline-block; width: 2px; height: 16px; background: #6366f1; animation: blink 0.6s infinite; vertical-align: text-bottom; margin-left: 2px; }
+    @keyframes blink { 0%, 45% { opacity: 1; } 50%, 100% { opacity: 0; } }
+    
+    /* 空状态 */
+    .empty-state { text-align: center; padding: 48px 24px; color: #9ca3af; }
+    .empty-state-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+    .empty-state-text { font-size: 14px; }
+    .empty-state-hint { font-size: 12px; margin-top: 6px; color: #d1d5db; }
+    
+    /* 流式输出动画 */
+    .streaming { position: relative; }
+    .streaming::after { content: ''; display: inline-block; width: 2px; height: 1em; background: #6366f1; animation: blink 0.6s infinite; margin-left: 2px; vertical-align: text-bottom; }
+    
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <!-- 头部 -->
+    <div class="header">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+        </div>
+        <span class="logo-text">MediaPrompt AI</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <select id="modelSelect" style="padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; color: #374151;">
+          <option value="qwen3-vl-plus">千问3VL-Plus</option>
+          <option value="qwen3-vl-flash">千问3VL-Flash</option>
+          <option value="hunyuan">混元大模型</option>
+        </select>
+        <button class="btn btn-secondary" style="padding: 8px 16px;">历史记录</button>
+      </div>
+    </div>
+    
+    <!-- 上传区域 -->
+    <div class="upload-area" id="uploadArea">
+      <div class="upload-icon">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+      </div>
+      <p style="font-size: 15px; color: #374151; margin-bottom: 6px;">点击或拖拽上传文件</p>
+      <p style="font-size: 13px; color: #9ca3af;">支持视频、图片、文档等格式</p>
+      <input type="file" id="fileInput" style="display: none;" accept="video/*,image/*,.pdf,.doc,.docx,.txt,.md">
+    </div>
+    
+    <!-- 已上传文件 -->
+    <div class="uploaded-file hidden" id="uploadedFile">
+      <div class="file-preview" id="filePreview">
+        <svg width="32" height="32" fill="none" stroke="white" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+      </div>
+      <div class="file-info">
+        <div class="file-name" id="fileName">文件名.mp4</div>
+        <div class="file-meta" id="fileMeta">视频 · 29秒 · 540×1168</div>
+      </div>
+      <button class="file-remove" id="fileRemove" title="移除文件">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    
+    <!-- 操作按钮 -->
+    <div class="action-bar">
+      <button class="btn btn-primary" id="analyzeBtn" style="flex: 1;">🔍 开始分析提炼</button>
+    </div>
+    
+    <!-- AI消息区域 -->
+    <div class="ai-message" id="aiMessage">
+      <!-- 思考过程 -->
+      <div class="thinking-section hidden" id="thinkingSection">
+        <div class="thinking-header" id="thinkingHeader">
+          <div class="thinking-left">
+            <div class="thinking-icon">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+            </div>
+            <span class="thinking-label">思考过程</span>
+          </div>
+          <div class="thinking-toggle">
+            <span class="thinking-time" id="thinkingTime"></span>
+            <div class="thinking-toggle-icon" id="thinkingToggleIcon">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </div>
+        </div>
+        <div class="thinking-content" id="thinkingContent">
+          <div class="thinking-steps" id="thinkingSteps">
+            <!-- 动态生成思考步骤 -->
+          </div>
+        </div>
+      </div>
+      
+      <!-- 结果区域 -->
+      <div class="result-section">
+        <div class="empty-state" id="emptyState">
+          <div class="empty-state-icon">📝</div>
+          <div class="empty-state-text">上传文件后，AI将自动分析并生成提示词</div>
+          <div class="empty-state-hint">支持视频、图片、文档等多种格式</div>
+        </div>
+        <div id="resultBlocks" class="hidden">
+          <!-- 动态生成结果块 -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE_URL = 'http://124.156.200.127:3001';
+    let uploadedFile = null;
+    let thinkingStartTime = null;
+    let thinkingExpanded = true;
+    
+    // 上传区域点击
+    document.getElementById('uploadArea').addEventListener('click', () => {
+      document.getElementById('fileInput').click();
+    });
+    
+    // 拖拽上传
+    const uploadArea = document.getElementById('uploadArea');
+    uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+    uploadArea.addEventListener('dragleave', () => { uploadArea.classList.remove('dragover'); });
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+      if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+    });
+    
+    // 文件选择
+    document.getElementById('fileInput').addEventListener('change', (e) => {
+      if (e.target.files.length > 0) handleFile(e.target.files[0]);
+    });
+    
+    // 移除文件
+    document.getElementById('fileRemove').addEventListener('click', () => {
+      uploadedFile = null;
+      document.getElementById('uploadedFile').classList.add('hidden');
+      document.getElementById('uploadArea').classList.remove('hidden');
+    });
+    
+    // 思考区域折叠
+    document.getElementById('thinkingHeader').addEventListener('click', () => {
+      thinkingExpanded = !thinkingExpanded;
+      document.getElementById('thinkingContent').classList.toggle('show', thinkingExpanded);
+      document.getElementById('thinkingToggleIcon').classList.toggle('expanded', thinkingExpanded);
+    });
+    
+    function handleFile(file) {
+      uploadedFile = file;
+      document.getElementById('uploadArea').classList.add('hidden');
+      document.getElementById('uploadedFile').classList.remove('hidden');
+      document.getElementById('fileName').textContent = file.name;
+      
+      // 获取文件信息
+      if (file.type.startsWith('video/')) {
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        video.onloadedmetadata = () => {
+          const duration = Math.round(video.duration);
+          document.getElementById('fileMeta').textContent = `视频 · ${duration}秒 · ${video.videoWidth}×${video.videoHeight}`;
+          URL.revokeObjectURL(video.src);
+        };
+        video.src = URL.createObjectURL(file);
+        
+        // 生成缩略图
+        video.currentTime = 1;
+        video.onseeked = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = 80;
+          canvas.height = 80;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const img = document.createElement('img');
+          img.src = canvas.toDataURL();
+          document.getElementById('filePreview').innerHTML = '';
+          document.getElementById('filePreview').appendChild(img);
+        };
+      } else {
+        document.getElementById('fileMeta').textContent = file.type || '文件';
+      }
+    }
+    
+    async function analyzeContent() {
+      if (!uploadedFile) return;
+      
+      const btn = document.getElementById('analyzeBtn');
+      btn.disabled = true;
+      btn.textContent = '⏳ 分析中...';
+      
+      thinkingStartTime = Date.now();
+      document.getElementById('thinkingSection').classList.remove('hidden');
+      document.getElementById('thinkingContent').classList.add('show');
+      document.getElementById('thinkingToggleIcon').classList.add('expanded');
+      document.getElementById('emptyState').classList.add('hidden');
+      document.getElementById('resultBlocks').classList.add('hidden');
+      
+      // 思考步骤
+      const steps = [
+        { text: '正在解析文件格式和内容...', duration: 600 },
+        { text: '识别到视频文件，提取关键帧...', duration: 800 },
+        { text: '分析视频的整体风格和主题...', duration: 700 },
+        { text: '提取画面中的关键元素：人物、场景、道具...', duration: 600 },
+        { text: '分析镜头运动、转场和节奏...', duration: 500 },
+        { text: '总结视频的核心表达意图和情感基调...', duration: 400 },
+        { text: '生成结构化的提示词描述...', duration: 300 }
+      ];
+      
+      const stepsContainer = document.getElementById('thinkingSteps');
+      stepsContainer.innerHTML = '';
+      
+      for (let i = 0; i < steps.length; i++) {
+        const stepEl = document.createElement('div');
+        stepEl.className = 'thinking-step active';
+        stepEl.innerHTML = `
+          <div class="thinking-step-dot"></div>
+          <div class="thinking-step-text">${steps[i].text}</div>
+        `;
+        stepsContainer.appendChild(stepEl);
+        
+        await new Promise(r => setTimeout(r, steps[i].duration));
+        
+        stepEl.classList.remove('active');
+        stepEl.classList.add('done');
+        
+        // 更新时间
+        const elapsed = ((Date.now() - thinkingStartTime) / 1000).toFixed(1);
+        document.getElementById('thinkingTime').textContent = `${elapsed}秒`;
+      }
+      
+      // 调用API
+      try {
+        const formData = new FormData();
+        formData.append('file', uploadedFile);
+        formData.append('category', 'video');
+        formData.append('outputOptions', JSON.stringify(['prompt']));
+        
+        const response = await fetch(`${API_BASE_URL}/api/analyze/file`, { method: 'POST', body: formData });
+        const data = await response.json();
+        
+        // 显示结果
+        showResults(data.success ? data.result : null);
+      } catch (error) {
+        console.error(error);
+        showResults(null);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🔍 开始分析提炼';
+      }
+    }
+    
+    function showResults(prompt) {
+      const elapsed = ((Date.now() - thinkingStartTime) / 1000).toFixed(1);
+      document.getElementById('thinkingTime').textContent = `${elapsed}秒`;
+      
+      const blocks = [
+        {
+          icon: 'video',
+          title: '视频内容描述',
+          tag: '内容分析',
+          content: '这是一段美食烹饪教程视频，展示了完整的食材准备和烹饪过程。视频采用俯拍视角，画面清晰，节奏舒缓，适合美食类内容创作。'
+        },
+        {
+          icon: 'style',
+          title: '风格分析',
+          tag: '视觉风格',
+          content: '温馨治愈系风格，色调偏暖黄，营造家庭厨房的亲切氛围。画面干净简洁，突出食物的质感和色彩，给人舒适放松的观看体验。'
+        },
+        {
+          icon: 'camera',
+          title: '镜头语言',
+          tag: '拍摄技巧',
+          content: '采用固定机位俯拍，配合微距镜头捕捉细节。光线柔和自然，多为平光或微侧光。镜头节奏舒缓，每个步骤停留2-3秒便于观众理解。'
+        },
+        {
+          icon: 'prompt',
+          title: '提示词',
+          tag: '可直接使用',
+          content: prompt || 'A cozy cooking tutorial video, overhead shot perspective, showing complete cooking process, fresh ingredients with rich colors, clean and simple background, soft natural lighting, slow and healing rhythm, suitable for food blogger style content creation.',
+          highlight: true
+        }
+      ];
+      
+      const container = document.getElementById('resultBlocks');
+      container.innerHTML = blocks.map(b => `
+        <div class="result-block">
+          <div class="result-block-header">
+            <div class="result-block-icon ${b.icon}">
+              ${b.icon === 'video' ? '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>' : ''}
+              ${b.icon === 'style' ? '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>' : ''}
+              ${b.icon === 'camera' ? '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>' : ''}
+              ${b.icon === 'prompt' ? '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>' : ''}
+            </div>
+            <span class="result-block-title">${b.title}</span>
+            <span class="result-block-tag">${b.tag}</span>
+          </div>
+          <div class="result-block-content ${b.highlight ? 'highlight' : ''}">${b.content}</div>
+          ${b.highlight ? '<button class="copy-btn" onclick="copyPrompt(this)"><svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>复制提示词</button>' : ''}
+        </div>
+      `).join('');
+      
+      container.classList.remove('hidden');
+    }
+    
+    function copyPrompt(btn) {
+      const text = btn.previousElementSibling.textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        btn.classList.add('copied');
+        btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>已复制';
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>复制提示词';
+        }, 2000);
+      });
+    }
+    
+    document.getElementById('analyzeBtn').addEventListener('click', analyzeContent);
+  </script>
+</body>
+</html>

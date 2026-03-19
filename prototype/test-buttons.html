@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>按钮测试</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="p-8">
+  <h1 class="text-2xl font-bold mb-4">按钮功能测试</h1>
+  
+  <div class="mb-4">
+    <h2 class="text-lg font-semibold mb-2">1. 语言切换</h2>
+    <div class="flex gap-2">
+      <button class="lang-btn active px-3 py-1 rounded text-xs font-medium bg-gray-800 text-white" data-lang="zh" onclick="switchLang('zh')">中文</button>
+      <button class="lang-btn px-3 py-1 rounded text-xs text-gray-500 bg-gray-100" data-lang="en" onclick="switchLang('en')">EN</button>
+    </div>
+    <p id="langText" class="mt-2 text-sm text-gray-600">当前语言: 中文</p>
+  </div>
+  
+  <div class="mb-4">
+    <h2 class="text-lg font-semibold mb-2">2. 类别切换</h2>
+    <div class="flex gap-2">
+      <button class="category-btn px-4 py-2 rounded bg-white border border-gray-300" data-type="doc" onclick="switchCategory('doc')">文档</button>
+      <button class="category-btn px-4 py-2 rounded bg-white border border-gray-300" data-type="image" onclick="switchCategory('image')">图片</button>
+      <button class="category-btn px-4 py-2 rounded bg-white border border-gray-300" data-type="video" onclick="switchCategory('video')">视频</button>
+    </div>
+    <p id="categoryText" class="mt-2 text-sm text-gray-600">当前类别: 文档</p>
+    <div id="videoSection" class="hidden mt-2 p-3 bg-blue-50 rounded">
+      <p class="text-sm">🎬 视频专属区域</p>
+      <p class="text-sm">📐 视频尺寸选择</p>
+    </div>
+  </div>
+  
+  <div class="mb-4">
+    <h2 class="text-lg font-semibold mb-2">3. 社交媒体按钮</h2>
+    <div class="flex gap-2">
+      <button class="w-10 h-10 rounded-full flex items-center justify-center" style="background: #07C160;" title="微信" onclick="shareTo('wechat')">
+        <span class="text-white text-xs">微信</span>
+      </button>
+      <button class="w-10 h-10 rounded-full flex items-center justify-center" style="background: #000000;" title="抖音" onclick="shareTo('douyin')">
+        <span class="text-white text-xs">抖音</span>
+      </button>
+      <button class="w-10 h-10 rounded-full flex items-center justify-center" style="background: #FF2442;" title="小红书" onclick="shareTo('xiaohongshu')">
+        <span class="text-white text-xs">小红</span>
+      </button>
+    </div>
+    <p id="shareText" class="mt-2 text-sm text-gray-600"></p>
+  </div>
+  
+  <div class="mb-4">
+    <h2 class="text-lg font-semibold mb-2">4. 下载按钮</h2>
+    <button class="px-4 py-2 bg-gray-800 text-white rounded" onclick="downloadTest()">下载测试</button>
+    <p id="downloadText" class="mt-2 text-sm text-gray-600"></p>
+  </div>
+
+  <script>
+    let currentLang = 'zh';
+    let currentCategory = 'doc';
+    
+    function switchLang(lang) {
+      currentLang = lang;
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.remove('bg-gray-800', 'text-white');
+        btn.classList.add('bg-gray-100', 'text-gray-500');
+      });
+      document.querySelector(`[data-lang="${lang}"]`).classList.remove('bg-gray-100', 'text-gray-500');
+      document.querySelector(`[data-lang="${lang}"]`).classList.add('bg-gray-800', 'text-white');
+      document.getElementById('langText').textContent = lang === 'zh' ? '当前语言: 中文' : 'Current Language: English';
+    }
+    
+    function switchCategory(type) {
+      currentCategory = type;
+      document.querySelectorAll('.category-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-500', 'text-white');
+        btn.classList.add('bg-white');
+      });
+      document.querySelector(`[data-type="${type}"]`).classList.remove('bg-white');
+      document.querySelector(`[data-type="${type}"]`).classList.add('bg-blue-500', 'text-white');
+      document.getElementById('categoryText').textContent = `当前类别: ${type}`;
+      document.getElementById('videoSection').classList.toggle('hidden', type !== 'video');
+    }
+    
+    function shareTo(platform) {
+      document.getElementById('shareText').textContent = `分享到: ${platform}`;
+      alert(`分享到 ${platform}`);
+    }
+    
+    function downloadTest() {
+      document.getElementById('downloadText').textContent = '下载成功!';
+      alert('下载测试成功!');
+    }
+  </script>
+</body>
+</html>
