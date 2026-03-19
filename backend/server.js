@@ -67,7 +67,7 @@ app.post('/api/analyze/text', async (req, res) => {
       success: true,
       category,
       outputOptions,
-      result: result,
+      result: cleanResult(result),
       timestamp: new Date().toISOString()
     });
     
@@ -110,7 +110,7 @@ app.post('/api/analyze/image', upload.single('image'), async (req, res) => {
       success: true,
       category: 'image',
       outputOptions,
-      result: result,
+      result: cleanResult(result),
       model: 'qwen3-vl-plus',
       timestamp: new Date().toISOString()
     });
@@ -167,7 +167,7 @@ app.post('/api/analyze/file', upload.single('file'), async (req, res) => {
     res.json({
       success: true,
       category,
-      result: result,
+      result: cleanResult(result),
       timestamp: new Date().toISOString()
     });
     
@@ -198,7 +198,7 @@ app.post('/api/preview', async (req, res) => {
     res.json({
       success: true,
       model: CONFIG.model,
-      preview: result,
+      preview: cleanResult(result),
       timestamp: new Date().toISOString()
     });
     
@@ -616,6 +616,18 @@ async function callAIWithImage(systemPrompt, base64Image) {
   });
 }
 
+/**
+ * 清理AI返回结果中的格式符号
+ */
+function cleanResult(text) {
+  return text
+    .replace(/\*\*/g, '')  // 去掉 **
+    .replace(/\*/g, '')    // 去掉 *
+    .replace(/#{1,6}\s?/g, '')  // 去掉 # 标题符号
+    .replace(/`{1,3}/g, '') // 去掉 ` 代码块符号
+    .trim();
+}
+
 // ==================== 创意生成 API ====================
 app.post('/api/generate', async (req, res) => {
   try {
@@ -639,7 +651,7 @@ app.post('/api/generate', async (req, res) => {
     
     res.json({
       success: true,
-      result,
+      result: cleanResult(result),
       model: model === 'auto' ? CONFIG.model : model,
       timestamp: new Date().toISOString()
     });

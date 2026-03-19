@@ -70,6 +70,7 @@ export default function Home() {
       uploadedFile: File | null;
       result: string;
       editorContent: string;
+      creativeResult: string;
     }
   }>({});
   
@@ -154,13 +155,14 @@ export default function Home() {
   // 切换类别的处理函数
   const handleContentTypeChange = useCallback((newType: ContentType) => {
     // 如果当前类别有内容，保存到历史
-    if (uploadedFile || result || editorContent) {
+    if (uploadedFile || result || editorContent || creativeResult) {
       setHistory(prev => ({
         ...prev,
         [contentType]: {
           uploadedFile,
           result,
-          editorContent
+          editorContent,
+          creativeResult
         }
       }));
     }
@@ -168,13 +170,24 @@ export default function Home() {
     // 切换到新类别
     setContentType(newType);
     
-    // 新类别始终清空（不恢复历史，因为用户期望是空的）
-    setUploadedFile(null);
-    setResult('');
-    setEditorContent('');
-    setStatus('waiting');
+    // 恢复新类别的历史内容（如果有）
+    const historyData = history[newType];
+    if (historyData) {
+      setUploadedFile(historyData.uploadedFile || null);
+      setResult(historyData.result || '');
+      setEditorContent(historyData.editorContent || '');
+      setCreativeResult(historyData.creativeResult || '');
+      setStatus(historyData.result ? 'success' : 'waiting');
+    } else {
+      // 如果没有历史记录，清空
+      setUploadedFile(null);
+      setResult('');
+      setEditorContent('');
+      setCreativeResult('');
+      setStatus('waiting');
+    }
     setMessage(null);
-  }, [contentType, uploadedFile, result, editorContent]);
+  }, [contentType, uploadedFile, result, editorContent, creativeResult, history]);
 
   const handleFileSelect = useCallback((file: File) => {
     setUploadedFile(file);
