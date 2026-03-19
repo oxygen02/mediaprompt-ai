@@ -81,6 +81,20 @@ body {
   background: #f0f0f0;
 }
 
+.upload-zone.has-preview {
+  border-style: solid;
+  border-color: #a1a1aa;
+}
+
+/* 预览容器 */
+.preview-container img {
+  transition: transform 0.2s ease;
+}
+
+.preview-container:hover img {
+  transform: scale(1.02);
+}
+
 /* 按钮 */
 .btn-primary {
   background: linear-gradient(135deg, #52525b 0%, #3f3f46 50%, #52525b 100%);

@@ -63,6 +63,7 @@ export default function Home() {
   const [selectedModel, setSelectedModel] = useState('auto');
   const [selectedAnalysisModel, setSelectedAnalysisModel] = useState('auto');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   
   // 切换分析模型时清空结果
   const handleAnalysisModelChange = useCallback((newModel: string) => {
@@ -86,6 +87,7 @@ export default function Home() {
       result: string;
       editorContent: string;
       creativeResult: string;
+      previewUrl: string | null;
     }
   }>({});
   
@@ -179,7 +181,8 @@ export default function Home() {
           uploadedFile,
           result,
           editorContent,
-          creativeResult
+          creativeResult,
+          previewUrl
         };
       }
       // 获取新类别的历史数据
@@ -205,12 +208,14 @@ export default function Home() {
       setResult(historyData.result || '');
       setEditorContent(historyData.editorContent || '');
       setCreativeResult(historyData.creativeResult || '');
+      setPreviewUrl(historyData.previewUrl || null);
       setStatus(historyData.result ? 'success' : 'waiting');
     } else {
       setUploadedFile(null);
       setResult('');
       setEditorContent('');
       setCreativeResult('');
+      setPreviewUrl(null);
       setStatus('waiting');
     }
     setMessage(null);
@@ -223,7 +228,31 @@ export default function Home() {
     setResult('');
     setEditorContent('');
     setStatus('idle');
-  }, [t]);
+    
+    // 生成预览缩略图
+    if (contentType === 'image' && file.type.startsWith('image/')) {
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    } else if (contentType === 'video' && file.type.startsWith('video/')) {
+      // 视频缩略图：生成第一帧
+      const video = document.createElement('video');
+      video.src = URL.createObjectURL(file);
+      video.currentTime = 1; // 取第1秒
+      video.onloadeddata = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 320;
+        canvas.height = 180;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          setPreviewUrl(canvas.toDataURL('image/jpeg', 0.7));
+        }
+        URL.revokeObjectURL(video.src);
+      };
+    } else {
+      setPreviewUrl(null);
+    }
+  }, [t, contentType]);
 
   // 处理拖拽上传
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -557,27 +586,55 @@ export default function Home() {
           {/* 上传模仿对象区域 */}
           <div className="mb-5">
             <div
-              className="upload-zone rounded-xl py-3 px-4 text-center cursor-pointer relative group min-h-[160px]"
+              className={`upload-zone rounded-xl py-3 px-4 text-center cursor-pointer relative group min-h-[160px] ${previewUrl ? 'has-preview' : ''}`}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
             >
               {/* 悬停标题 */}
-              <span className="absolute top-2 left-3 text-xs text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300 font-medium">{lang === 'zh' ? '上传模仿内容' : 'Upload Content to Imitate'}</span>
+              <span className="absolute top-2 left-3 text-xs text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300 font-medium z-10">{lang === 'zh' ? '上传模仿内容' : 'Upload Content to Imitate'}</span>
               <input
                 ref={fileInputRef}
                 type="file"
                 className="hidden"
+                accept={contentType === 'image' ? 'image/*' : contentType === 'video' ? 'video/*' : contentType === 'website' ? '.html,.htm,.zip' : undefined}
                 onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
               />
-              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-1.5">
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-                </svg>
-              </div>
-              <p className="text-gray-600 text-sm mb-0.5">{uploadedFile ? uploadedFile.name : t('upload.drag')}</p>
-              <p className="text-gray-400 text-xs">{getFileHint()}</p>
+              
+              {/* 缩略图预览 */}
+              {previewUrl && (contentType === 'image' || contentType === 'video') ? (
+                <div className="preview-container relative">
+                  <img 
+                    src={previewUrl} 
+                    alt="Preview" 
+                    className="max-h-[120px] mx-auto rounded-lg shadow-sm object-contain"
+                  />
+                  <div className="mt-2 text-sm text-gray-600">{uploadedFile?.name}</div>
+                  <div className="absolute top-1 right-1 bg-black/50 text-white text-xs px-2 py-0.5 rounded">
+                    {contentType === 'video' ? '🎬 视频' : '📷 图片'}
+                  </div>
+                </div>
+              ) : uploadedFile && contentType === 'website' ? (
+                <div className="preview-container">
+                  <div className="w-12 h-12 mx-auto mb-2 rounded-lg bg-gray-100 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+                    </svg>
+                  </div>
+                  <p className="text-gray-600 text-sm">{uploadedFile.name}</p>
+                </div>
+              ) : (
+                <>
+                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-1.5">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                    </svg>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-0.5">{uploadedFile ? uploadedFile.name : t('upload.drag')}</p>
+                  <p className="text-gray-400 text-xs">{getFileHint()}</p>
+                </>
+              )}
               
               {/* 提示词选项 - 框内底部 */}
               <div className="mt-3 pt-3 border-t border-gray-200" onClick={(e) => e.stopPropagation()}>
