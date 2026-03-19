@@ -19,6 +19,8 @@ async function generateWithWanxiang(prompt, options = {}) {
   
   console.log('通义万相: 创建图片生成任务...');
   
+  const imageCount = options.n || 4; // 默认生成4张图片
+  
   const response = await axios({
     method: 'POST',
     url: 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis',
@@ -35,7 +37,7 @@ async function generateWithWanxiang(prompt, options = {}) {
       parameters: {
         style: options.style || '<auto>',
         size: options.size || '1024*1024',
-        n: options.n || 1
+        n: imageCount // 生成数量
       }
     },
     timeout: 30000

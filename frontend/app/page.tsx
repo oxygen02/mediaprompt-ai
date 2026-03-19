@@ -917,27 +917,34 @@ export default function Home() {
 
           {/* 生成内容区 */}
           <div className="mb-4">
-            <div className="output-card rounded-xl p-4 min-h-[80px] shadow-sm flex items-center justify-center relative overflow-hidden">
+            <div className={`output-card rounded-xl p-4 shadow-sm relative overflow-hidden ${creativeImages.length > 0 ? 'min-h-[auto]' : 'min-h-[80px] flex items-center justify-center'}`}>
               {creativeImages.length > 0 ? (
-                // 图片结果显示
-                <div className="grid grid-cols-2 gap-4 w-full">
+                // 图片结果显示 - 2x2网格
+                <div className="grid grid-cols-2 gap-3 w-full">
                   {creativeImages.map((imgUrl, index) => (
-                    <div key={index} className="relative group">
+                    <div key={index} className="relative group aspect-square">
                       <img 
                         src={imgUrl} 
                         alt={`生成图片 ${index + 1}`}
-                        className="w-full rounded-lg shadow-md hover:shadow-lg transition-shadow"
+                        className="w-full h-full object-cover rounded-lg shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"
+                        onClick={() => window.open(imgUrl, '_blank')}
                       />
-                      <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <a 
-                          href={imgUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="bg-black/50 text-white px-3 py-1 rounded text-xs hover:bg-black/70"
-                          download
-                        >
-                          {lang === 'zh' ? '下载' : 'Download'}
-                        </a>
+                      <div className="absolute top-2 left-2 bg-black/60 text-white px-2 py-0.5 rounded text-xs font-medium">
+                        #{index + 1}
+                      </div>
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                          <a 
+                            href={imgUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="bg-white/90 text-gray-800 px-3 py-1.5 rounded text-xs font-medium hover:bg-white transition-colors"
+                            download
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {lang === 'zh' ? '下载' : 'Download'}
+                          </a>
+                        </div>
                       </div>
                     </div>
                   ))}

@@ -704,19 +704,20 @@ app.post('/api/generate', async (req, res) => {
       return res.status(400).json({ error: '请输入提示词' });
     }
 
-    // 如果是图片或视频类型，使用图片生成API
+    // 如果是图片或视频类型，强制使用通义万相生成图片
     if (contentType === 'image' || contentType === 'video') {
       try {
-        console.log(`使用图片生成API: contentType=${contentType}, model=${model}`);
-        const imageResult = await generateImage(prompt, model);
+        console.log(`使用通义万相生成图片: contentType=${contentType}, prompt=${prompt.substring(0, 50)}...`);
+        // 强制使用通义万相，生成4张图片
+        const imageResult = await generateImage(prompt, 'wanxiang', { n: 4 });
         
         // 如果返回的是图片URL
-        if (imageResult.success && imageResult.images) {
+        if (imageResult.success && imageResult.images && imageResult.images.length > 0) {
           return res.json({
             success: true,
             type: 'image',
             images: imageResult.images,
-            model: imageResult.model,
+            model: 'wanx-v1',
             contentType: contentType,
             timestamp: new Date().toISOString()
           });
@@ -733,8 +734,11 @@ app.post('/api/generate', async (req, res) => {
           });
         }
       } catch (imageError) {
-        console.error('图片生成失败，回退到文本生成:', imageError.message);
-        // 图片生成失败时，回退到文本生成
+        console.error('图片生成失败:', imageError.message);
+        return res.status(500).json({ 
+          error: '图片生成失败', 
+          message: imageError.message 
+        });
       }
     }
 
