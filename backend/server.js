@@ -130,7 +130,8 @@ app.post('/api/analyze/file', upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: '缺少文件' });
     }
 
-    const { category = 'document', outputOptions = ['prompt'] } = req.body;
+    const { category = 'document', outputOptions = ['prompt'], detailLevel = 'detailed' } = req.body;
+    const parsedOptions = typeof outputOptions === 'string' ? JSON.parse(outputOptions) : outputOptions;
     
     // 读取文件内容
     const filePath = req.file.path;
@@ -156,7 +157,7 @@ app.post('/api/analyze/file', upload.single('file'), async (req, res) => {
     }
     
     // 分析内容
-    const systemPrompt = buildSystemPrompt(category, outputOptions);
+    const systemPrompt = buildSystemPrompt(category, parsedOptions, detailLevel);
     const result = await callAI(systemPrompt, fileContent);
     
     // 清理临时文件
@@ -380,18 +381,74 @@ app.get('/api/qwen/status', (req, res) => {
 /**
  * 构建系统提示词
  */
-function buildSystemPrompt(category, outputOptions) {
-  const prompts = {
-    document: `你是一位专业的AI提示词逆向工程师。你的任务是：分析用户提供的AI生成内容，反推出"生成这样内容需要什么提示词"。
+function buildSystemPrompt(category, outputOptions, detailLevel = 'detailed') {
+  // 维度选项的中英文映射
+  const dimensionLabels = {
+    // 文档类
+    theme: '主题',
+    genre: '体裁',
+    langStyle: '语言风格',
+    tone: '语气',
+    structure: '结构',
+    wordCount: '字数',
+    audience: '目标受众',
+    scenario: '应用场景',
+    keywords: '关键词',
+    // 图片类
+    subject: '主体',
+    style: '风格',
+    composition: '构图',
+    lighting: '光影',
+    colors: '色彩',
+    quality: '画质',
+    background: '背景',
+    atmosphere: '氛围',
+    // 视频类
+    camera: '镜头',
+    rhythm: '节奏',
+    logic: '逻辑',
+    mood: '情绪',
+    // 网站类
+    webType: '网站类型',
+    layout: '布局',
+    modules: '模块',
+    device: '设备适配',
+    texture: '质感'
+  };
 
-## 你的任务
-用户会给你一份由AI生成的内容（文章、文案、代码等），你需要逆向分析：
-1. 这份内容是什么类型的？（文章、故事、报告、营销文案等）
-2. 生成这样内容需要什么样的提示词？
-3. 提示词应该包含哪些关键要素？
+  // 根据用户选择的维度构建分析维度列表
+  const selectedDimensions = outputOptions.map(opt => dimensionLabels[opt] || opt).join('、');
+
+  if (detailLevel === 'concise') {
+    // 简洁模式
+    return `你是一位专业的AI提示词逆向工程师。分析用户提供的AI生成内容，直接输出可用于AI生成的提示词。
 
 ## 输出格式
-请直接输出可用于AI生成的提示词，格式如下：
+直接输出提示词，不需要分析过程。格式如下：
+
+---
+**提示词：**
+\`\`\`
+[具体的提示词，可直接使用]
+\`\`\`
+---
+
+## 要求
+1. 提示词要具体、可执行
+2. 控制在50字以内`;
+  }
+
+  // 详细模式 - 根据用户选择的维度生成提示词
+  return `你是一位专业的AI提示词逆向工程师。你的任务是：分析用户提供的AI生成内容，反推出"生成这样内容需要什么提示词"。
+
+## 你的任务
+用户会给你一份由AI生成的内容，你需要逆向分析并生成提示词。
+
+## 用户选择的维度
+用户选择了以下维度进行分析：${selectedDimensions || '主题、风格'}
+
+## 输出格式
+请严格按照用户选择的维度进行分析，格式如下：
 
 ---
 **推测的原始提示词：**
@@ -400,57 +457,16 @@ function buildSystemPrompt(category, outputOptions) {
 \`\`\`
 
 **分析维度：**
-1. **内容类型**：[文章/故事/报告/文案/代码等]
-2. **风格特征**：[正式/轻松/幽默/专业/感性等]
-3. **语言特点**：[简洁/详尽/口语化/书面语等]
-4. **结构特点**：[总分总/并列式/递进式等]
-5. **字数范围**：[估算字数]
+${outputOptions.map((opt, i) => `${i + 1}. **${dimensionLabels[opt] || opt}**：[根据内容分析]`).join('\n')}
 
 **优化建议：**
 [如何改进提示词，生成更好的效果]
 ---
 
 ## 重要原则
-1. 提示词要具体、可执行，不要抽象描述
-2. 提示词要包含角色设定、任务要求、输出格式
-3. 分析要基于内容的实际特征，不要臆测
-4. 输出要简洁清晰，便于用户理解和修改`,
-
-    image: `你是一位专业的图像分析专家，擅长分析图片并生成AI绘画提示词。
-
-请分析用户描述的图片内容，生成可用于 Midjourney / Stable Diffusion / DALL-E 的提示词。
-
-输出格式：
-- 主体描述
-- 风格标签
-- 构图建议
-- 光影描述
-- 色彩方案
-- 参数建议`,
-
-    video: `你是一位专业的视频内容分析师，擅长分析视频并生成创作提示词。
-
-请分析用户提供的视频描述，生成可用于 Sora / Runway / HeyGen 的提示词。
-
-输出格式：
-- 场景描述
-- 镜头运动
-- 人物动作
-- 环境氛围
-- 音效建议`,
-
-    website: `你是一位专业的网页设计师，擅长分析网站并生成设计提示词。
-
-请分析用户提供的网页描述，生成可用于前端开发的提示词。
-
-输出格式：
-- 页面结构
-- 设计风格
-- 配色方案
-- 交互建议
-- 技术栈推荐`
-  };
-  return prompts[category] || prompts.document;
+1. 只分析用户选择的维度，不要添加其他维度
+2. 提示词要具体、可执行，不要抽象描述
+3. 分析要基于内容的实际特征，不要臆测`;
 }
 
 /**

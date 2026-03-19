@@ -72,6 +72,9 @@ export default function Home() {
       editorContent: string;
     }
   }>({});
+  
+  // 输出详细程度
+  const [detailLevel, setDetailLevel] = useState<'concise' | 'detailed'>('detailed');
 
   // Refs
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -140,6 +143,12 @@ export default function Home() {
     };
     return options[contentType];
   }, [contentType]);
+
+  // 输出详细程度选项
+  const detailLevels = [
+    { value: 'concise', label: '简洁' },
+    { value: 'detailed', label: '详细' },
+  ];
 
   // 处理文件选择
   // 切换类别的处理函数
@@ -235,6 +244,7 @@ export default function Home() {
         uploadedFile,
         contentType,
         selectedOptions,
+        detailLevel,
         contentType === 'video' ? selectedVideoSize : undefined,
         contentType === 'video' ? voiceover : undefined
       );
@@ -566,23 +576,43 @@ ${editorContent}
               <p className="text-gray-400 text-xs">{getFileHint()}</p>
               
               {/* 提示词选项 - 框内底部 */}
-              <div className="flex items-center justify-center gap-1 overflow-x-auto mt-3 pt-3 border-t border-gray-200" style={{ flexWrap: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
-                {getOutputOptions().map((option) => (
-                  <span
-                    key={option.value}
-                    className={`option-tag text-xs flex-shrink-0 ${selectedOptions.includes(option.value) ? 'selected' : ''}`}
-                    onClick={() => {
-                      if (selectedOptions.includes(option.value)) {
-                        setSelectedOptions(selectedOptions.filter(v => v !== option.value));
-                      } else {
-                        setSelectedOptions([...selectedOptions, option.value]);
-                      }
-                    }}
-                  >
-                    <span className="dot"></span>
-                    <span>{t(option.label)}</span>
-                  </span>
-                ))}
+              <div className="mt-3 pt-3 border-t border-gray-200" onClick={(e) => e.stopPropagation()}>
+                {/* 详细程度选择 */}
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <span className="text-xs text-gray-500">输出风格：</span>
+                  {detailLevels.map((level) => (
+                    <span
+                      key={level.value}
+                      className={`px-2 py-0.5 rounded text-xs cursor-pointer transition-colors ${
+                        detailLevel === level.value 
+                          ? 'bg-indigo-500 text-white' 
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                      onClick={() => setDetailLevel(level.value as 'concise' | 'detailed')}
+                    >
+                      {level.label}
+                    </span>
+                  ))}
+                </div>
+                {/* 维度选项 */}
+                <div className="flex items-center justify-center gap-1 overflow-x-auto" style={{ flexWrap: 'nowrap' }}>
+                  {getOutputOptions().map((option) => (
+                    <span
+                      key={option.value}
+                      className={`option-tag text-xs flex-shrink-0 ${selectedOptions.includes(option.value) ? 'selected' : ''}`}
+                      onClick={() => {
+                        if (selectedOptions.includes(option.value)) {
+                          setSelectedOptions(selectedOptions.filter(v => v !== option.value));
+                        } else {
+                          setSelectedOptions([...selectedOptions, option.value]);
+                        }
+                      }}
+                    >
+                      <span className="dot"></span>
+                      <span>{t(option.label)}</span>
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

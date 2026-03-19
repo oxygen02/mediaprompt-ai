@@ -18,6 +18,7 @@ export async function analyzeFile(
   file: File,
   category: string,
   outputOptions: string[],
+  detailLevel?: 'concise' | 'detailed',
   videoSize?: string,
   voiceover?: string
 ): Promise<AnalyzeResponse> {
@@ -25,6 +26,9 @@ export async function analyzeFile(
   formData.append('file', file);
   formData.append('category', category);
   formData.append('outputOptions', JSON.stringify(outputOptions));
+  if (detailLevel) {
+    formData.append('detailLevel', detailLevel);
+  }
   
   if (category === 'video') {
     if (videoSize) formData.append('videoSize', videoSize);
