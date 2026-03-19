@@ -1,502 +1,413 @@
 # MediaPrompt AI - 技术文档
 
-> 版本：v1.0  
-> 更新日期：2026-03-18  
-> 技术负责人：Oliver Young
+> 版本：v1.0 (基于 index-v20)  
+> 更新日期：2026-03-18
 
 ---
 
-## 一、系统架构
+## 一、项目概述
 
-### 1.1 整体架构
+### 1.1 项目名称
+MediaPrompt AI - 内容反向工程工具箱
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        用户层                                 │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │
-│  │  Web 浏览器  │  │  移动端 H5  │  │  API 客户端  │          │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘          │
-└─────────┼────────────────┼────────────────┼─────────────────┘
-          │                │                │
-          ▼                ▼                ▼
-┌─────────────────────────────────────────────────────────────┐
-│                       CDN / 静态资源                          │
-│              腾讯云 COS (oliveryoung1983-1409675040)          │
-│              https://oliveryoung1983-1409675040.cos...       │
-└─────────────────────────────────────────────────────────────┘
-          │
-          ▼
-┌─────────────────────────────────────────────────────────────┐
-│                       API 网关层                              │
-│                    Express.js Server                         │
-│                    http://124.156.200.127:3001               │
-└─────────────────────────────────────────────────────────────┘
-          │
-          ▼
-┌─────────────────────────────────────────────────────────────┐
-│                       业务逻辑层                              │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │
-│  │  文本分析    │  │  图片分析    │  │  文件处理    │          │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘          │
-└─────────┼────────────────┼────────────────┼─────────────────┘
-          │                │                │
-          ▼                ▼                ▼
-┌─────────────────────────────────────────────────────────────┐
-│                       AI 服务层                               │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │              腾讯云混元大模型                           │   │
-│  │         hunyuan-lite / hunyuan-pro / hunyuan-vision  │   │
-│  └─────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-```
+### 1.2 项目描述
+一款帮助非技术用户从已有内容中提炼 AI 提示词的 Web 应用。
 
-### 1.2 技术栈
+### 1.3 技术选型
 
-| 层级 | 技术选型 | 说明 |
-|------|----------|------|
-| 前端 | HTML + Tailwind CSS + Vanilla JS | 轻量级，快速加载 |
-| CDN | 腾讯云 COS | 静态资源托管 |
-| 后端 | Node.js + Express | API 服务 |
-| AI | 腾讯云混元大模型 | 文本/图片分析 |
-| 存储 | 本地文件系统 | 临时文件存储 |
+| 层级 | 技术 | 版本 |
+|------|------|------|
+| 前端框架 | Next.js | 16.x |
+| 样式框架 | Tailwind CSS | 4.x |
+| 编程语言 | TypeScript | 5.x |
+| 后端框架 | Express.js | 4.x |
+| AI 模型 | 腾讯云混元 | hunyuan-lite |
+| 云存储 | 腾讯云 COS | - |
+| 代码托管 | GitHub | - |
 
 ---
 
-## 二、API 接口文档
+## 二、前端架构
 
-### 2.1 基础信息
-
-- **Base URL**: `http://124.156.200.127:3001`
-- **Content-Type**: `application/json`
-- **认证方式**: 暂无（后续支持 API Key）
-
-### 2.2 接口列表
-
-#### 2.2.1 健康检查
+### 2.1 目录结构
 
 ```
-GET /api/health
+mediaprompt-web/
+├── src/
+│   ├── app/
+│   │   ├── layout.tsx      # 根布局
+│   │   ├── page.tsx        # 主页面
+│   │   ├── globals.css     # 全局样式
+│   │   └── api/            # API 路由
+│   │       └── analyze/
+│   │           ├── file/route.ts
+│   │           └── text/route.ts
+│   └── components/         # 组件（可选）
+├── public/
+│   └── reference.html      # 参考原型
+├── package.json
+├── tailwind.config.ts
+└── next.config.ts
 ```
 
-**响应示例：**
-```json
-{
-  "status": "ok",
-  "timestamp": "2026-03-18T00:00:00.000Z",
-  "model": "hunyuan-lite",
-  "auth": "tencent-sdk",
-  "hasCredentials": true
+### 2.2 页面布局
+
+#### 左侧固定导航栏
+- **位置**：`position: fixed; top: 0; left: 0; height: 100vh;`
+- **宽度**：208px (w-52)
+- **内容**：
+  - Logo 区域（h-14）
+  - 分析工具（文档/图片/视频/网页）
+  - 案例展示（文档/图片/视频/网页案例）
+  - 个人中心（历史记录/设置）
+  - 用户信息区
+
+#### 顶部导航栏
+- **高度**：56px (h-14)
+- **位置**：`sticky top-0`
+- **内容**：
+  - 左侧：首页/定价/关于
+  - 中间：月食动画 + Slogan
+  - 右侧：语言切换/登录/注册
+
+#### 固定副标题区域
+- **位置**：`position: fixed; top: 56px; left: 208px;`
+- **z-index**：25
+- **内容**：
+  - 副标题文字
+  - 四个月食类别按钮
+
+### 2.3 核心样式
+
+#### 月食动画
+
+```css
+/* 月亮基础样式 */
+.moon-base {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, 
+    #e4e4e7 0%, #d4d4d8 25%, #a1a1aa 55%, #71717a 80%, #52525b 100%);
+  animation: moonRotate 20s linear infinite;
+}
+
+/* 旋转动画 */
+@keyframes moonRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 月食吞噬效果 */
+@keyframes lunarEclipseReal {
+  0% { box-shadow: inset 0 0 0 0 rgba(15,15,26,0); }
+  25% { box-shadow: inset 8px 0 0 0 rgba(15,15,26,0.7); }
+  50% { box-shadow: inset 18px 0 0 0 rgba(15,15,26,0.95); }
+  75% { box-shadow: inset 8px 0 0 0 rgba(15,15,26,0.7); }
+  100% { box-shadow: inset 0 0 0 0 rgba(15,15,26,0); }
 }
 ```
 
-#### 2.2.2 文本分析
+#### 分类月食图标
 
-```
-POST /api/analyze/text
-```
-
-**请求参数：**
-```json
-{
-  "content": "要分析的文本内容",
-  "category": "document",
-  "outputOptions": ["prompt", "outline"]
+```css
+.moon-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, 
+    #f5f5f5 0%, #e5e5e5 40%, #d4d4d4 70%, #a3a3a3 100%);
 }
+
+.moon-95 { box-shadow: inset 14px 0 0 0 rgba(20,20,25,0.9); }  /* 文档 90%黑 */
+.moon-70 { box-shadow: inset 11px 0 0 0 rgba(20,20,25,0.9); }  /* 图片 70%黑 */
+.moon-40 { box-shadow: inset 6px 0 0 0 rgba(20,20,25,0.9); }   /* 视频 40%黑 */
+.moon-full { box-shadow: inset 2px 0 0 0 rgba(20,20,25,0.9); } /* 网页 10%黑 */
 ```
 
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| content | string | 是 | 要分析的文本内容 |
-| category | string | 否 | 类别：document/image/video/website，默认 document |
-| outputOptions | string[] | 否 | 输出选项，默认 ["prompt"] |
+#### 结构化提示词样式
 
-**响应示例：**
-```json
-{
-  "success": true,
-  "category": "document",
-  "outputOptions": ["prompt"],
-  "result": "## Role\n...\n## Background\n...",
-  "timestamp": "2026-03-18T00:00:00.000Z"
+```css
+.prompt-block { 
+  background: #fafafa; 
+  border-left: 3px solid #52525b; 
+  padding: 8px 12px; 
+  margin-bottom: 8px; 
+  border-radius: 0 6px 6px 0; 
 }
+
+.prompt-block.workflow { border-left-color: #71717a; }
+.prompt-block.examples { border-left-color: #a1a1aa; }
+.prompt-block.init { border-left-color: #52525b; }
 ```
 
-#### 2.2.3 图片分析
+### 2.4 状态管理
 
-```
-POST /api/analyze/image
-```
+```typescript
+type Category = 'document' | 'image' | 'video' | 'website';
 
-**请求参数：**
-- Content-Type: `multipart/form-data`
-
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| image | file | 是 | 图片文件（JPG/PNG/WebP/GIF） |
-| outputOptions | string | 否 | JSON 数组字符串，如 '["prompt","style"]' |
-
-**响应示例：**
-```json
-{
-  "success": true,
-  "category": "image",
-  "outputOptions": ["prompt"],
-  "result": "主体描述：...\n风格标签：...",
-  "timestamp": "2026-03-18T00:00:00.000Z"
-}
+// 主要状态
+const [currentType, setCurrentType] = useState<Category>('document');
+const [isLoading, setIsLoading] = useState(false);
+const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+const [selectedOptions, setSelectedOptions] = useState<string[]>(['prompt']);
 ```
 
-#### 2.2.4 文件分析
+---
+
+## 三、后端架构
+
+### 3.1 目录结构
 
 ```
+backend/
+├── server.js           # Express 服务器
+├── server-sdk.js       # 腾讯云 SDK 版本
+├── package.json
+└── .env                # 环境变量
+```
+
+### 3.2 API 接口
+
+#### 文件分析接口
+
+```http
 POST /api/analyze/file
-```
+Content-Type: multipart/form-data
 
-**请求参数：**
-- Content-Type: `multipart/form-data`
+参数：
+- file: 文件
+- category: 类别 (document|image|video|website)
+- outputOptions: 输出选项 JSON 数组
 
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| file | file | 是 | 文档文件（Word/PDF/TXT/Markdown） |
-| category | string | 否 | 类别，默认 document |
-| outputOptions | string | 否 | JSON 数组字符串 |
-
-**响应示例：**
-```json
+响应：
 {
   "success": true,
+  "result": "结构化提示词内容"
+}
+```
+
+#### 文本分析接口
+
+```http
+POST /api/analyze/text
+Content-Type: application/json
+
+参数：
+{
+  "text": "文本内容",
   "category": "document",
-  "result": "## Role\n...",
-  "timestamp": "2026-03-18T00:00:00.000Z"
+  "outputOptions": ["提示词", "大纲梗概"]
 }
-```
 
-#### 2.2.5 模拟预览
-
-```
-POST /api/preview
-```
-
-**请求参数：**
-```json
-{
-  "prompt": "生成的提示词内容"
-}
-```
-
-**响应示例：**
-```json
+响应：
 {
   "success": true,
-  "model": "hunyuan-lite",
-  "preview": "基于提示词生成的示例输出...",
-  "timestamp": "2026-03-18T00:00:00.000Z"
+  "result": "结构化提示词内容"
 }
 ```
 
----
-
-## 三、腾讯云混元大模型集成
-
-### 3.1 认证方式
-
-使用腾讯云 SDK 方式，通过 SecretId 和 SecretKey 认证：
+### 3.3 腾讯云混元调用
 
 ```javascript
 const tencentcloud = require("tencentcloud-sdk-nodejs");
 const HunyuanClient = tencentcloud.hunyuan.v20230901.Client;
 
-const client = new HunyuanClient({
+// 配置
+const clientConfig = {
   credential: {
     secretId: process.env.TENCENT_SECRET_ID,
     secretKey: process.env.TENCENT_SECRET_KEY,
   },
   region: "ap-guangzhou",
-});
-```
+};
 
-### 3.2 模型选择
-
-| 模型 | 用途 | 特点 |
-|------|------|------|
-| hunyuan-lite | 快速文本生成 | 免费额度大，速度快 |
-| hunyuan-pro | 复杂任务 | 能力更强，适合专业场景 |
-| hunyuan-vision | 图片分析 | 多模态，支持图片理解 |
-
-### 3.3 调用示例
-
-```javascript
-// 文本分析
+// 调用模型
+const client = new HunyuanClient(clientConfig);
 const response = await client.ChatCompletions({
-  Model: 'hunyuan-lite',
+  Model: "hunyuan-lite",
   Messages: [
-    { Role: 'system', Content: '你是专业的内容分析专家...' },
-    { Role: 'user', Content: '分析这段内容...' }
-  ],
-  Temperature: 0.7,
-  TopP: 0.8,
+    { Role: "user", Content: prompt }
+  ]
 });
-
-const result = response.Choices[0].Message.Content;
-```
-
-### 3.4 费用说明
-
-- **混元 Lite**：免费额度较大，适合 MVP 阶段
-- **混元 Pro**：按 token 计费，专业版用户使用
-- **Coding Plan**：已购买套餐，包含大模型调用额度
-
----
-
-## 四、前端实现
-
-### 4.1 技术选型
-
-- **框架**：无框架，原生 HTML + JS
-- **样式**：Tailwind CSS（CDN）
-- **特点**：轻量、快速加载、SEO 友好
-
-### 4.2 核心模块
-
-```javascript
-// API 调用
-const API_BASE_URL = 'http://124.156.200.127:3001';
-
-// 文本分析
-async function analyzeContent() {
-  const response = await fetch(`${API_BASE_URL}/api/analyze/text`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      content: uploadedContent,
-      category: currentType,
-      outputOptions: getSelectedOptions()
-    })
-  });
-  return await response.json();
-}
-
-// 文件上传
-async function uploadFile(file) {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('category', currentType);
-  
-  const response = await fetch(`${API_BASE_URL}/api/analyze/file`, {
-    method: 'POST',
-    body: formData
-  });
-  return await response.json();
-}
-```
-
-### 4.3 状态管理
-
-```javascript
-// 全局状态
-let currentLang = 'zh';        // 当前语言
-let currentType = 'document';  // 当前类别
-let isLoading = false;         // 加载状态
-let uploadedContent = '';      // 上传的内容
-let uploadedFile = null;       // 上传的文件
 ```
 
 ---
 
-## 五、部署架构
+## 四、部署配置
 
-### 5.1 当前部署
+### 4.1 服务器信息
 
-| 组件 | 位置 | 说明 |
-|------|------|------|
-| 前端静态资源 | 腾讯云 COS | ap-singapore 区域 |
-| 后端 API 服务 | 云服务器 | 124.156.200.127:3001 |
-| AI 服务 | 腾讯云混元 | API 调用 |
+| 项目 | 值 |
+|------|------|
+| 服务器 IP | 124.156.200.127 |
+| 前端端口 | 3002 |
+| 后端端口 | 3001 |
+| 操作系统 | Ubuntu Linux |
 
-### 5.2 服务器信息
-
-```
-公网 IP: 124.156.200.127
-端口: 3001
-系统: Linux (Ubuntu)
-Node.js: v22.22.1
-```
-
-### 5.3 进程管理
+### 4.2 环境变量
 
 ```bash
-# 启动服务
+# 腾讯云凭证（请使用环境变量，不要提交到代码库）
+TENCENT_SECRET_ID=<your-secret-id>
+TENCENT_SECRET_KEY=<your-secret-key>
+
+# AI API
+AI_API_KEY=<your-api-key>
+
+# COS 配置
+COS_BUCKET=oliveryoung1983-1409675040
+COS_REGION=ap-singapore
+```
+
+### 4.3 启动命令
+
+```bash
+# 前端
+cd /root/.openclaw/workspace/project/mediaprompt-web
+npm run dev -- -H 0.0.0.0 -p 3002
+
+# 后端
 cd /root/.openclaw/workspace/mediaprompt-ai/backend
-node server-sdk.js &
-
-# 查看日志
-tail -f sdk.log
-
-# 检查进程
-ps aux | grep node
+node server.js
 ```
-
-### 5.4 后续优化
-
-| 优化项 | 方案 | 优先级 |
-|--------|------|--------|
-| 进程守护 | PM2 | P0 |
-| 反向代理 | Nginx | P0 |
-| HTTPS | Let's Encrypt | P0 |
-| 域名绑定 | DNS 配置 | P1 |
-| 日志收集 | ELK / 云日志 | P2 |
-| 监控告警 | 云监控 | P2 |
 
 ---
 
-## 六、安全设计
+## 五、GitHub 仓库
 
-### 6.1 数据安全
+### 5.1 仓库信息
 
-- 文件上传后立即处理，处理完成后删除
-- 不存储用户上传的内容（MVP 阶段）
-- 后续支持隐私模式
+| 项目 | 值 |
+|------|------|
+| 仓库地址 | https://github.com/oxygen02/mediaprompt-ai |
+| 默认分支 | master |
+| Next.js 分支 | nextjs |
 
-### 6.2 接口安全
-
-```javascript
-// CORS 配置
-app.use(cors({
-  origin: ['https://oliveryoung1983-1409675040.cos.ap-singapore.myqcloud.com'],
-  credentials: true
-}));
-
-// 请求大小限制
-app.use(express.json({ limit: '50mb' }));
-
-// 文件大小限制
-const upload = multer({ 
-  limits: { fileSize: 50 * 1024 * 1024 } // 50MB
-});
-```
-
-### 6.3 密钥管理
+### 5.2 推送命令
 
 ```bash
-# 环境变量配置
-TENCENT_SECRET_ID=xxx
-TENCENT_SECRET_KEY=xxx
-AI_API_KEY=xxx
+git add .
+git commit -m "feat: update MVP features"
+git push origin master
 ```
 
 ---
 
-## 七、性能优化
+## 六、COS 存储
 
-### 7.1 前端优化
+### 6.1 存储桶信息
 
-- Tailwind CSS CDN 缓存
-- 图片懒加载
-- 代码压缩
+| 项目 | 值 |
+|------|------|
+| Bucket | oliveryoung1983-1409675040 |
+| Region | ap-singapore |
+| 访问权限 | public-read |
 
-### 7.2 后端优化
+### 6.2 文件列表
 
-- 连接池复用
-- 响应缓存
-- 异步处理
-
-### 7.3 AI 调用优化
-
-- 选择合适的模型（lite vs pro）
-- 控制输出长度（max_tokens）
-- 批量请求合并
+| 文件 | URL |
+|------|------|
+| index-v20.html | https://oliveryoung1983-1409675040.cos.ap-singapore.myqcloud.com/mediaprompt/index-v20.html |
+| index-v21.html | https://oliveryoung1983-1409675040.cos.ap-singapore.myqcloud.com/mediaprompt/index-v21.html |
+| cases.html | https://oliveryoung1983-1409675040.cos.ap-singapore.myqcloud.com/mediaprompt/cases.html |
 
 ---
 
-## 八、监控与日志
+## 七、模型选择配置
 
-### 8.1 日志格式
+### 7.1 国内模型
 
-```
-[dotenv@17.3.1] injecting env (7) from .env
-🚀 MediaPrompt API 服务已启动
-📍 地址: http://localhost:3001
-🤖 模型: hunyuan-lite
-🔑 SecretId: 已配置
-📅 时间: 2026-03-18T00:00:00.000Z
-```
+| 模型 | value | 说明 |
+|------|-------|------|
+| 文心一言 | wenxin | 百度 |
+| 通义千问 | qwen | 阿里 |
+| 智谱清言 | zhipu | 智谱AI |
+| 讯飞星火 | spark | 科大讯飞 |
 
-### 8.2 错误处理
+### 7.2 国际模型
 
-```javascript
-try {
-  const result = await callHunyuan(systemPrompt, userContent);
-  res.json({ success: true, result });
-} catch (error) {
-  console.error('分析失败:', error);
-  res.status(500).json({ 
-    error: '分析失败', 
-    message: error.message 
-  });
-}
-```
+| 模型 | value | 说明 |
+|------|-------|------|
+| GPT-4o | gpt4 | OpenAI |
+| Claude 3.5 | claude | Anthropic |
+| Gemini Pro | gemini | Google |
+| Llama 3 | llama | Meta |
 
 ---
 
-## 九、扩展计划
+## 八、输出选项配置
 
-### 9.1 短期（1个月）
+### 8.1 文档分析
 
-- [ ] PM2 进程守护
-- [ ] Nginx 反向代理
-- [ ] HTTPS 证书
-- [ ] 域名绑定
-- [ ] 用户系统
+| 选项 | value |
+|------|-------|
+| 提示词 | prompt |
+| 大纲梗概 | outline |
+| 结构分析 | structure |
+| 关键词 | keywords |
 
-### 9.2 中期（3个月）
+### 8.2 图片分析
 
-- [ ] 数据库集成（MongoDB/MySQL）
-- [ ] Redis 缓存
-- [ ] 消息队列（异步处理）
-- [ ] API 限流
+| 选项 | value |
+|------|-------|
+| 提示词 | prompt |
+| 风格描述 | style |
+| 配色方案 | colors |
+| 参数建议 | params |
 
-### 9.3 长期（6个月）
+### 8.3 视频分析
 
-- [ ] 微服务拆分
-- [ ] Kubernetes 部署
-- [ ] 多区域部署
-- [ ] 私有化方案
+| 选项 | value |
+|------|-------|
+| 提示词 | prompt |
+| 分镜脚本 | storyboard |
+| 节奏分析 | pacing |
+| 推荐工具 | tools |
+
+### 8.4 网页分析
+
+| 选项 | value |
+|------|-------|
+| 提示词 | prompt |
+| 功能列表 | features |
+| MVP文档 | mvp |
+| 技术栈 | tech |
 
 ---
 
-## 十、附录
+## 九、提示词资源网站
 
-### 10.1 环境变量
+### 9.1 文字文案类
+- **Promptly** - https://promptly.works/ （综合性社区）
 
-```bash
-# .env 文件
-TENCENT_SECRET_ID=your_secret_id_here
-TENCENT_SECRET_KEY=your_secret_key_here
-TENCENT_REGION=ap-guangzhou
+### 9.2 图片类
+- **Lexica** - https://lexica.art/ （SD 图像搜索）
+- **PromptCat** - https://promptcat.io/ （提示词分享）
+- **Prompt.Gacha** - https://prompt-gacha.com/ （图片反推）
 
-AI_API_KEY=your_api_key_here
-AI_BASE_URL=https://api.hunyuan.cloud.tencent.com/v1
-AI_MODEL=hunyuan-lite
+### 9.3 视频类
+- **Sora 2提示词合集库** - https://sora2prompts.com/
+- **VideoPrompt** - https://videoprompt.com/
 
-PORT=3001
-```
+### 9.4 网页设计类
+- **Style2image** - https://www.style2image.com/
 
-### 10.2 依赖版本
+---
 
-```json
-{
-  "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "multer": "^1.4.5-lts.1",
-    "dotenv": "^17.3.1",
-    "tencentcloud-sdk-nodejs": "^4.0.300"
-  }
-}
-```
+## 十、开发注意事项
 
-### 10.3 相关链接
+### 10.1 安全
+- ❌ 不要将 SecretId/SecretKey 提交到 GitHub
+- ✅ 使用环境变量存储敏感信息
+- ✅ GitHub Push Protection 会自动检测泄露
 
-- 腾讯云控制台：https://console.cloud.tencent.com/
-- 混元大模型文档：https://cloud.tencent.com/document/product/1729
-- Tailwind CSS：https://tailwindcss.com/
+### 10.2 性能
+- 输出结果区域限制高度 280px，超出滚动
+- 使用 CSS 动画而非 JS 动画
+- 图片使用懒加载
+
+### 10.3 兼容性
+- 使用系统字体（PingFang SC / Microsoft YaHei）
+- 支持 Chrome / Firefox / Safari 最新版
+- 移动端适配待实现
