@@ -157,9 +157,16 @@ app.post('/api/analyze/file', upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: '文件内容为空或无法读取' });
     }
     
+    // 限制内容长度，避免API报错
+    const maxContentLength = 10000; // 约1万字符
+    let truncatedContent = fileContent;
+    if (fileContent.length > maxContentLength) {
+      truncatedContent = fileContent.substring(0, maxContentLength) + '\n\n...(内容过长已截断)';
+    }
+    
     // 分析内容
     const systemPrompt = buildSystemPrompt(category, parsedOptions, detailLevel);
-    const result = await callAI(systemPrompt, fileContent);
+    const result = await callAI(systemPrompt, truncatedContent);
     
     // 清理临时文件
     fs.unlinkSync(filePath);
@@ -173,9 +180,14 @@ app.post('/api/analyze/file', upload.single('file'), async (req, res) => {
     
   } catch (error) {
     console.error('文件分析失败:', error);
+    // 返回用户友好的错误信息
+    let errorMessage = error.message;
+    if (error.message.includes('too large')) {
+      errorMessage = '文件内容过长，请上传较小的文件（建议5000字以内）';
+    }
     res.status(500).json({ 
       error: '文件分析失败', 
-      message: error.message 
+      message: errorMessage 
     });
   }
 });
