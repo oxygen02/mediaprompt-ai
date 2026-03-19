@@ -23,7 +23,9 @@ export async function analyzeFile(
   voiceover?: string
 ): Promise<AnalyzeResponse> {
   const formData = new FormData();
-  formData.append('file', file);
+  // 根据类别使用正确的字段名
+  const fieldName = category === 'image' ? 'image' : 'file';
+  formData.append(fieldName, file);
   formData.append('category', category);
   formData.append('outputOptions', JSON.stringify(outputOptions));
   if (detailLevel) {

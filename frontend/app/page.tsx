@@ -153,36 +153,28 @@ export default function Home() {
   // 处理文件选择
   // 切换类别的处理函数
   const handleContentTypeChange = useCallback((newType: ContentType) => {
-    // 保存当前类别的内容到历史
-    setHistory(prev => ({
-      ...prev,
-      [contentType]: {
-        uploadedFile,
-        result,
-        editorContent
-      }
-    }));
+    // 如果当前类别有内容，保存到历史
+    if (uploadedFile || result || editorContent) {
+      setHistory(prev => ({
+        ...prev,
+        [contentType]: {
+          uploadedFile,
+          result,
+          editorContent
+        }
+      }));
+    }
     
     // 切换到新类别
     setContentType(newType);
     
-    // 恢复新类别的历史内容
-    const historyData = history[newType];
-    if (historyData) {
-      setUploadedFile(historyData.uploadedFile);
-      setResult(historyData.result);
-      setEditorContent(historyData.editorContent);
-      setStatus(historyData.result ? 'success' : 'waiting');
-    } else {
-      // 如果没有历史记录，清空
-      setUploadedFile(null);
-      setResult('');
-      setEditorContent('');
-      setStatus('waiting');
-    }
-    
+    // 新类别始终清空（不恢复历史，因为用户期望是空的）
+    setUploadedFile(null);
+    setResult('');
+    setEditorContent('');
+    setStatus('waiting');
     setMessage(null);
-  }, [contentType, uploadedFile, result, editorContent, history]);
+  }, [contentType, uploadedFile, result, editorContent]);
 
   const handleFileSelect = useCallback((file: File) => {
     setUploadedFile(file);
@@ -294,48 +286,27 @@ export default function Home() {
     setMessage({ text: lang === 'zh' ? '正在生成创意内容...' : 'Generating creative content...', type: 'success' });
     
     try {
-      // 模拟生成过程
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // 调用后端生成API
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://124.156.200.127:3001'}/api/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: editorContent.trim(),
+          model: selectedModel,
+          contentType,
+        }),
+      });
       
-      let mockResult = '';
+      const data = await response.json();
       
-      if (editorContent.trim() && sourceFile) {
-        // 提示词 + 源文件模式
-        mockResult = `【${selectedModel}模型生成结果】
-
-基于提示词：
-${editorContent}
-
-结合源文件：${sourceFile.name}
-
-生成的创意内容：
-━━━━━━━━━━━━━━━━━━━━
-这里是基于您的提示词和源文件综合生成的创意内容。
-━━━━━━━━━━━━━━━━━━━━`;
-      } else if (editorContent.trim()) {
-        // 仅提示词模式
-        mockResult = `【${selectedModel}模型生成结果】
-
-基于提示词：
-${editorContent}
-
-生成的创意内容：
-━━━━━━━━━━━━━━━━━━━━
-这是仅基于您的提示词生成的创意内容。
-━━━━━━━━━━━━━━━━━━━━`;
-      } else if (sourceFile) {
-        // 仅源文件模式
-        mockResult = `【${selectedModel}模型生成结果】
-
-基于源文件：${sourceFile.name}
-
-生成的创意内容：
-━━━━━━━━━━━━━━━━━━━━
-这是基于您的源文件生成的创意内容。
-━━━━━━━━━━━━━━━━━━━━`;
+      if (data.success && data.result) {
+        setCreativeResult(data.result);
+        setMessage({ text: lang === 'zh' ? '生成完成！' : 'Generation complete!', type: 'success' });
+      } else {
+        setMessage({ text: data.error || (lang === 'zh' ? '生成失败' : 'Generation failed'), type: 'error' });
       }
-      
-      setCreativeResult(mockResult);
       setMessage({ text: lang === 'zh' ? '生成完成！' : 'Generation complete!', type: 'success' });
     } catch (error) {
       setMessage({ text: lang === 'zh' ? '生成失败' : 'Generation failed', type: 'error' });

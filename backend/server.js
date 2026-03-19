@@ -87,7 +87,8 @@ app.post('/api/analyze/image', upload.single('image'), async (req, res) => {
       return res.status(400).json({ error: '缺少图片文件' });
     }
 
-    const { outputOptions = ['prompt'] } = req.body;
+    const { outputOptions = ['subject', 'style', 'composition'], detailLevel = 'detailed' } = req.body;
+    const parsedOptions = typeof outputOptions === 'string' ? JSON.parse(outputOptions) : outputOptions;
     
     // 读取图片并转 base64
     const imagePath = req.file.path;
@@ -97,7 +98,7 @@ app.post('/api/analyze/image', upload.single('image'), async (req, res) => {
     
     // 使用千问VL分析图片
     console.log('使用千问VL分析图片...');
-    const systemPrompt = buildImagePrompt(outputOptions);
+    const systemPrompt = buildImagePrompt(parsedOptions);
     const userPrompt = '请详细分析这张图片，并生成AI绘画提示词。';
     
     const result = await analyzeWithQwenVL(systemPrompt, [imageUrl], userPrompt);
@@ -421,66 +422,73 @@ function buildSystemPrompt(category, outputOptions, detailLevel = 'detailed') {
 
   if (detailLevel === 'concise') {
     // 简洁模式
-    return `你是一位专业的AI提示词逆向工程师。分析用户提供的AI生成内容，直接输出可用于AI生成的提示词。
-
-## 输出格式
-直接输出提示词，不需要分析过程。格式如下：
-
----
-**提示词：**
-\`\`\`
-[具体的提示词，可直接使用]
-\`\`\`
----
+    return `你是一位专业的AI提示词逆向工程师。分析用户提供的AI生成内容，直接输出简洁的提示词。
 
 ## 要求
 1. 提示词要具体、可执行
-2. 控制在50字以内`;
+2. 直接输出提示词，不要添加任何格式符号
+3. 控制在30字以内`;
   }
 
   // 详细模式 - 根据用户选择的维度生成提示词
   return `你是一位专业的AI提示词逆向工程师。你的任务是：分析用户提供的AI生成内容，反推出"生成这样内容需要什么提示词"。
 
-## 你的任务
-用户会给你一份由AI生成的内容，你需要逆向分析并生成提示词。
-
 ## 用户选择的维度
-用户选择了以下维度进行分析：${selectedDimensions || '主题、风格'}
+${selectedDimensions || '主题、风格'}
 
-## 输出格式
-请严格按照用户选择的维度进行分析，格式如下：
+## 输出格式（按此格式输出，不要添加任何装饰符号如**或---）：
 
----
-**推测的原始提示词：**
-\`\`\`
-[这里是推测的原始提示词，要具体、可操作]
-\`\`\`
+【推测的原始提示词】
+[这里是推测的原始提示词]
 
-**分析维度：**
-${outputOptions.map((opt, i) => `${i + 1}. **${dimensionLabels[opt] || opt}**：[根据内容分析]`).join('\n')}
+【分析维度】
+${outputOptions.map((opt, i) => `${i + 1}. ${dimensionLabels[opt] || opt}：根据内容分析`).join('\n')}
 
-**优化建议：**
-[如何改进提示词，生成更好的效果]
----
+【优化建议】
+[如何改进提示词]
 
 ## 重要原则
-1. 只分析用户选择的维度，不要添加其他维度
-2. 提示词要具体、可执行，不要抽象描述
-3. 分析要基于内容的实际特征，不要臆测`;
+1. 不要使用任何**符号
+2. 不要使用---分隔符
+3. 只使用【】和数字编号
+4. 提示词要具体、可执行`;
 }
 
 /**
  * 构建图片分析提示词
  */
 function buildImagePrompt(outputOptions) {
-  return `你是一位专业的图像分析师，请分析这张图片并生成以下内容：
+  const dimensionLabels = {
+    subject: '主体',
+    style: '风格',
+    composition: '构图',
+    lighting: '光影',
+    colors: '色彩',
+    quality: '画质',
+    background: '背景',
+    atmosphere: '氛围'
+  };
 
-${outputOptions.includes('prompt') ? '- AI绘画提示词（适用于Midjourney/SD）' : ''}
-${outputOptions.includes('style') ? '- 风格描述' : ''}
-${outputOptions.includes('colors') ? '- 配色方案（提供HEX色值）' : ''}
-${outputOptions.includes('params') ? '- 参数建议（分辨率、采样器等）' : ''}
+  return `你是一位专业的图像分析师。分析这张图片并生成AI绘画提示词。
 
-请详细分析图片的主体、构图、光影、色彩、风格等元素。`;
+## 用户选择的维度
+${outputOptions.map(opt => dimensionLabels[opt] || opt).join('、') || '主体、风格'}
+
+## 输出格式（不要使用**符号）
+
+【推测的原始提示词】
+[可直接使用的AI绘画提示词]
+
+【分析维度】
+${outputOptions.map((opt, i) => `${i + 1}. ${dimensionLabels[opt] || opt}：根据图片分析`).join('\n')}
+
+【优化建议】
+[如何改进提示词]
+
+## 要求
+1. 不要使用任何**符号
+2. 不要使用---分隔符
+3. 提示词要具体、可执行`;
 }
 
 /**
@@ -607,6 +615,43 @@ async function callAIWithImage(systemPrompt, base64Image) {
     req.end();
   });
 }
+
+// ==================== 创意生成 API ====================
+app.post('/api/generate', async (req, res) => {
+  try {
+    const { prompt, model = 'auto', contentType = 'document' } = req.body;
+    
+    if (!prompt || !prompt.trim()) {
+      return res.status(400).json({ error: '请输入提示词' });
+    }
+    
+    // 根据模型选择API
+    let systemPrompt = '';
+    if (contentType === 'image') {
+      systemPrompt = '你是一位专业的AI艺术创作助手。根据用户的提示词，生成详细的创作建议和可能的输出描述。';
+    } else if (contentType === 'video') {
+      systemPrompt = '你是一位专业的视频创作助手。根据用户的提示词，生成详细的视频创作建议和场景描述。';
+    } else {
+      systemPrompt = '你是一位专业的内容创作助手。根据用户的提示词，生成高质量的内容。';
+    }
+    
+    const result = await callAI(systemPrompt, prompt);
+    
+    res.json({
+      success: true,
+      result,
+      model: model === 'auto' ? CONFIG.model : model,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('创意生成失败:', error);
+    res.status(500).json({ 
+      error: '创意生成失败', 
+      message: error.message 
+    });
+  }
+});
 
 // ==================== 启动服务 ====================
 
