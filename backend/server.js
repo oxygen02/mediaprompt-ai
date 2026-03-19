@@ -15,6 +15,7 @@ const { URL } = require('url');
 const mammoth = require('mammoth');
 const { getVideoInfo, compressVideo, smartCompress, extractKeyFrames } = require('./utils/video-compress');
 const { analyzeWithQwenVL, analyzeVideoFrames, QWEN_CONFIG } = require('./utils/qwen-vl-analyzer');
+const { smartCompressImage } = require('./utils/image-compress');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -90,10 +91,17 @@ app.post('/api/analyze/image', upload.single('image'), async (req, res) => {
     const { outputOptions = ['subject', 'style', 'composition'], detailLevel = 'detailed' } = req.body;
     const parsedOptions = typeof outputOptions === 'string' ? JSON.parse(outputOptions) : outputOptions;
     
-    // 读取图片并转 base64
+    // 读取图片
     const imagePath = req.file.path;
     const imageBuffer = fs.readFileSync(imagePath);
-    const base64Image = imageBuffer.toString('base64');
+    
+    // 智能压缩图片（超过1MB则压缩）
+    console.log(`原始图片大小: ${(imageBuffer.length / 1024).toFixed(1)} KB`);
+    const { buffer: compressedBuffer, compressed, originalSize, compressedSize } = await smartCompressImage(imageBuffer, 1024);
+    console.log(`压缩后大小: ${compressedSize.toFixed(1)} KB${compressed ? ' (已压缩)' : ''}`);
+    
+    // 转 base64
+    const base64Image = compressedBuffer.toString('base64');
     const imageUrl = `data:image/jpeg;base64,${base64Image}`;
     
     // 使用千问VL分析图片
@@ -112,6 +120,9 @@ app.post('/api/analyze/image', upload.single('image'), async (req, res) => {
       outputOptions,
       result: cleanResult(result),
       model: 'qwen3-vl-plus',
+      compressed,
+      originalSize: `${originalSize.toFixed(1)} KB`,
+      compressedSize: `${compressedSize.toFixed(1)} KB`,
       timestamp: new Date().toISOString()
     });
     
