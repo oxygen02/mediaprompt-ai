@@ -704,10 +704,10 @@ app.post('/api/generate', async (req, res) => {
       return res.status(400).json({ error: '请输入提示词' });
     }
 
-    // 如果是图片类型，使用图片生成API
-    if (contentType === 'image') {
+    // 如果是图片或视频类型，使用图片生成API
+    if (contentType === 'image' || contentType === 'video') {
       try {
-        console.log(`使用图片生成API: model=${model}`);
+        console.log(`使用图片生成API: contentType=${contentType}, model=${model}`);
         const imageResult = await generateImage(prompt, model);
         
         // 如果返回的是图片URL
@@ -717,6 +717,7 @@ app.post('/api/generate', async (req, res) => {
             type: 'image',
             images: imageResult.images,
             model: imageResult.model,
+            contentType: contentType,
             timestamp: new Date().toISOString()
           });
         }

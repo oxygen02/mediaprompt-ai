@@ -196,20 +196,19 @@ async function generateWithHunyuanHttp(prompt, options = {}) {
 async function generateImage(prompt, model = 'auto', options = {}) {
   console.log(`生成图片: model=${model}, prompt=${prompt.substring(0, 50)}...`);
 
-  // 根据模型选择API
-  if (model === 'wanxiang' || model === 'qwen-vl' || model === 'qwen-turbo') {
+  // 图片和视频优先使用通义万相
+  // 通义万相支持的模型标识：wanxiang, qwen-vl, qwen-turbo, auto
+  const wanxiangModels = ['wanxiang', 'qwen-vl', 'qwen-turbo', 'auto', 'doubao-vision', 'hunyuan-vision'];
+  
+  if (wanxiangModels.includes(model)) {
+    // 优先使用通义万相
     return await generateWithWanxiang(prompt, options);
   } else if (model === 'hunyuan' || model === 'hunyuan-lite' || model === 'hunyuan-pro') {
     // 混元暂时返回优化的提示词（需要确认实际图片生成API）
     return await generateWithHunyuanHttp(prompt, options);
   } else {
-    // auto: 默认使用通义万相
-    try {
-      return await generateWithWanxiang(prompt, options);
-    } catch (error) {
-      console.log('通义万相失败，尝试混元:', error.message);
-      return await generateWithHunyuanHttp(prompt, options);
-    }
+    // 默认使用通义万相
+    return await generateWithWanxiang(prompt, options);
   }
 }
 
