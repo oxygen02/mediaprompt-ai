@@ -18,7 +18,7 @@ const DouyinIcon = () => (
 );
 
 const XiaohongshuIcon = () => (
-  <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+  <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="4" fill="#FF2442"/><text x="12" y="16" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">小</text></svg>
 );
 
 const WeiboIcon = () => (
@@ -492,7 +492,7 @@ ${editorContent}
           {/* 上传模仿对象区域 */}
           <div className="mb-5">
             <div
-              className="upload-zone rounded-xl py-3 px-4 text-center cursor-pointer relative group"
+              className="upload-zone rounded-xl py-3 px-4 text-center cursor-pointer relative group min-h-[200px]"
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
@@ -659,7 +659,7 @@ ${editorContent}
           <div className="mb-5 relative group">
             {!editorContent && <span className="absolute top-2 left-3 text-xs text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none font-medium">{lang === 'zh' ? '创作你自己的提示词' : 'Create Your Own Prompts'}</span>}
             <textarea
-              className="w-full h-24 bg-white border border-gray-200 rounded-xl p-3 text-sm text-gray-600 placeholder-gray-400 focus:outline-none focus:border-gray-400 group-hover:placeholder-transparent transition-all duration-300"
+              className="w-full min-h-[200px] bg-white border-2 border-dashed border-gray-200 rounded-xl p-3 text-sm text-gray-600 placeholder-gray-400 focus:outline-none focus:border-gray-400 group-hover:placeholder-transparent transition-all duration-300"
               placeholder={t('editor.placeholder')}
               value={editorContent}
               onChange={(e) => setEditorContent(e.target.value)}
