@@ -17,6 +17,8 @@ const https = require('https');
 async function generateWithWanxiang(prompt, options = {}) {
   const apiKey = process.env.QWEN_API_KEY || 'sk-53e8ae2bf4b043448a47083b1de5446e';
   
+  console.log('通义万相: 创建图片生成任务...');
+  
   const response = await axios({
     method: 'POST',
     url: 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis',
@@ -31,54 +33,71 @@ async function generateWithWanxiang(prompt, options = {}) {
         prompt: prompt
       },
       parameters: {
-        style: options.style || '<auto>', // <auto>, <3d cartoon>, <anime>, <oil painting>, <watercolor>, <sketch>, <chinese painting>, <photography>
-        size: options.size || '1024*1024', // 1024*1024, 720*1280, 1280*720
-        n: options.n || 1, // 生成数量 1-4
-        seed: options.seed || Math.floor(Math.random() * 1000000)
+        style: options.style || '<auto>',
+        size: options.size || '1024*1024',
+        n: options.n || 1
       }
     },
     timeout: 30000
   });
 
   // 如果是异步任务，需要轮询获取结果
-  if (response.data.output && response.data.output.task_id) {
+  if (response.data && response.data.output && response.data.output.task_id) {
+    console.log(`通义万相: 任务ID ${response.data.output.task_id}`);
     return await pollWanxiangTask(response.data.output.task_id, apiKey);
   }
 
-  return response.data;
+  throw new Error('创建图片生成任务失败');
 }
 
 /**
  * 轮询通义万相任务状态
  */
-async function pollWanxiangTask(taskId, apiKey, maxRetries = 60) {
+async function pollWanxiangTask(taskId, apiKey, maxRetries = 90) {
+  console.log(`通义万相: 开始轮询任务状态 (最多 ${maxRetries} 次, 每次 2 秒)`);
+  
   for (let i = 0; i < maxRetries; i++) {
     await new Promise(resolve => setTimeout(resolve, 2000)); // 等待2秒
 
-    const response = await axios({
-      method: 'GET',
-      url: `https://dashscope.aliyuncs.com/api/v1/tasks/${taskId}`,
-      headers: {
-        'Authorization': `Bearer ${apiKey}`
-      }
-    });
+    try {
+      const response = await axios({
+        method: 'GET',
+        url: `https://dashscope.aliyuncs.com/api/v1/tasks/${taskId}`,
+        headers: {
+          'Authorization': `Bearer ${apiKey}`
+        },
+        timeout: 10000
+      });
 
-    const task = response.data.output;
-    
-    if (task.task_status === 'SUCCEEDED') {
-      return {
-        success: true,
-        images: task.results.map(r => r.url),
-        model: 'wanx-v1'
-      };
-    } else if (task.task_status === 'FAILED') {
-      throw new Error(task.message || '图片生成失败');
+      const output = response.data.output;
+      const status = output.task_status;
+      
+      console.log(`通义万相: [${i + 1}/${maxRetries}] 状态=${status}`);
+      
+      if (status === 'SUCCEEDED') {
+        const images = output.results ? output.results.map(r => r.url) : [];
+        console.log(`通义万相: 生成成功，图片数量=${images.length}`);
+        return {
+          success: true,
+          images: images,
+          model: 'wanx-v1'
+        };
+      } else if (status === 'FAILED') {
+        const errMsg = output.message || '图片生成失败';
+        console.error(`通义万相: 任务失败 - ${errMsg}`);
+        throw new Error(errMsg);
+      }
+      
+      // PENDING 或 RUNNING 继续等待
+    } catch (error) {
+      if (error.message.includes('图片生成失败')) {
+        throw error;
+      }
+      console.error(`通义万相: 轮询错误 - ${error.message}`);
     }
-    
-    console.log(`通义万相任务状态: ${task.task_status} (${i + 1}/${maxRetries})`);
   }
   
-  throw new Error('图片生成超时');
+  throw new Error('图片生成超时（等待超过3分钟）');
 }
 
 // ==================== 腾讯云混元图生图 ====================
