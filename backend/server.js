@@ -12,6 +12,7 @@ const path = require('path');
 const fs = require('fs');
 const https = require('https');
 const { URL } = require('url');
+const mammoth = require('mammoth');
 const { getVideoInfo, compressVideo, smartCompress, extractKeyFrames } = require('./utils/video-compress');
 const { analyzeWithQwenVL, analyzeVideoFrames, QWEN_CONFIG } = require('./utils/qwen-vl-analyzer');
 
@@ -133,7 +134,26 @@ app.post('/api/analyze/file', upload.single('file'), async (req, res) => {
     
     // 读取文件内容
     const filePath = req.file.path;
-    const fileContent = fs.readFileSync(filePath, 'utf-8');
+    const fileExt = path.extname(req.file.originalname || '').toLowerCase();
+    
+    let fileContent = '';
+    
+    // 根据文件类型读取内容
+    if (fileExt === '.docx') {
+      // 使用 mammoth 读取 docx 文件
+      const result = await mammoth.extractRawText({ path: filePath });
+      fileContent = result.value;
+    } else if (fileExt === '.pdf') {
+      // PDF 文件需要额外的处理库
+      fileContent = fs.readFileSync(filePath, 'utf-8');
+    } else {
+      // 文本文件直接读取
+      fileContent = fs.readFileSync(filePath, 'utf-8');
+    }
+    
+    if (!fileContent || fileContent.trim().length === 0) {
+      return res.status(400).json({ error: '文件内容为空或无法读取' });
+    }
     
     // 分析内容
     const systemPrompt = buildSystemPrompt(category, outputOptions);

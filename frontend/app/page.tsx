@@ -63,6 +63,15 @@ export default function Home() {
   const [selectedModel, setSelectedModel] = useState('auto');
   const [selectedAnalysisModel, setSelectedAnalysisModel] = useState('auto');
   const [isGenerating, setIsGenerating] = useState(false);
+  
+  // 历史记录 - 保存每个类别的内容
+  const [history, setHistory] = useState<{
+    [key in ContentType]?: {
+      uploadedFile: File | null;
+      result: string;
+      editorContent: string;
+    }
+  }>({});
 
   // Refs
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -133,7 +142,47 @@ export default function Home() {
   }, [contentType]);
 
   // 处理文件选择
+  // 切换类别的处理函数
+  const handleContentTypeChange = useCallback((newType: ContentType) => {
+    // 保存当前类别的内容到历史
+    setHistory(prev => ({
+      ...prev,
+      [contentType]: {
+        uploadedFile,
+        result,
+        editorContent
+      }
+    }));
+    
+    // 切换到新类别
+    setContentType(newType);
+    
+    // 恢复新类别的历史内容
+    const historyData = history[newType];
+    if (historyData) {
+      setUploadedFile(historyData.uploadedFile);
+      setResult(historyData.result);
+      setEditorContent(historyData.editorContent);
+      setStatus(historyData.result ? 'success' : 'waiting');
+    } else {
+      // 如果没有历史记录，清空
+      setUploadedFile(null);
+      setResult('');
+      setEditorContent('');
+      setStatus('waiting');
+    }
+    
+    setMessage(null);
+  }, [contentType, uploadedFile, result, editorContent, history]);
+
   const handleFileSelect = useCallback((file: File) => {
+    setUploadedFile(file);
+    setMessage({ text: `${t('btn.selectFile')}: ${file.name}`, type: 'success' });
+    // 清空之前的结果
+    setResult('');
+    setEditorContent('');
+    setStatus('idle');
+  }, [t]);
     setUploadedFile(file);
     setMessage({ text: `${t('btn.selectFile')}: ${file.name}`, type: 'success' });
     // 清空之前的结果
@@ -328,39 +377,19 @@ ${editorContent}
         </div>
         <nav className="flex-1 p-3 overflow-y-auto">
           <div className="text-xs text-gray-400 px-3 py-2">{t('nav.tools')}</div>
-          <a href="#" className={`nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm ${contentType === 'document' ? 'active text-gray-700' : 'text-gray-500'}`} onClick={() => {
-            setContentType('document');
-            setResult('');
-            setEditorContent('');
-            setUploadedFile(null);
-          }}>
+          <a href="#" className={`nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm ${contentType === 'document' ? 'active text-gray-700' : 'text-gray-500'}`} onClick={(e) => { e.preventDefault(); handleContentTypeChange('document'); }}>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             <span>{t('nav.document')}</span>
           </a>
-          <a href="#" className={`nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm ${contentType === 'image' ? 'active text-gray-700' : 'text-gray-500'}`} onClick={() => {
-            setContentType('image');
-            setResult('');
-            setEditorContent('');
-            setUploadedFile(null);
-          }}>
+          <a href="#" className={`nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm ${contentType === 'image' ? 'active text-gray-700' : 'text-gray-500'}`} onClick={(e) => { e.preventDefault(); handleContentTypeChange('image'); }}>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
             <span>{t('nav.image')}</span>
           </a>
-          <a href="#" className={`nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm ${contentType === 'video' ? 'active text-gray-700' : 'text-gray-500'}`} onClick={() => {
-            setContentType('video');
-            setResult('');
-            setEditorContent('');
-            setUploadedFile(null);
-          }}>
+          <a href="#" className={`nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm ${contentType === 'video' ? 'active text-gray-700' : 'text-gray-500'}`} onClick={(e) => { e.preventDefault(); handleContentTypeChange('video'); }}>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
             <span>{t('nav.video')}</span>
           </a>
-          <a href="#" className={`nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm ${contentType === 'website' ? 'active text-gray-700' : 'text-gray-500'}`} onClick={() => {
-            setContentType('website');
-            setResult('');
-            setEditorContent('');
-            setUploadedFile(null);
-          }}>
+          <a href="#" className={`nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm ${contentType === 'website' ? 'active text-gray-700' : 'text-gray-500'}`} onClick={(e) => { e.preventDefault(); handleContentTypeChange('website'); }}>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg>
             <span>{t('nav.website')}</span>
           </a>
@@ -437,12 +466,7 @@ ${editorContent}
                         ? 'bg-white text-gray-800 border border-gray-600 shadow-sm'
                         : 'text-gray-500 bg-white border border-gray-200'
                     }`}
-                    onClick={() => {
-                      setContentType(type);
-                      setResult('');
-                      setEditorContent('');
-                      setUploadedFile(null);
-                    }}
+                    onClick={() => handleContentTypeChange(type)}
                   >
                     <span className={`moon-icon ${moonClasses[index]}`}></span>
                     <span>{t(`category.${type}` as TranslationKey)}</span>

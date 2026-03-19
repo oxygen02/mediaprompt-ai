@@ -32,7 +32,15 @@ export async function analyzeFile(
   }
 
   try {
-    const response = await axios.post(`${API_BASE_URL}/api/analyze/file`, formData, {
+    // 根据文件类型选择正确的API端点
+    let endpoint = '/api/analyze/file';
+    if (category === 'image') {
+      endpoint = '/api/analyze/image';
+    } else if (category === 'video') {
+      endpoint = '/api/analyze/video';
+    }
+
+    const response = await axios.post(`${API_BASE_URL}${endpoint}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
