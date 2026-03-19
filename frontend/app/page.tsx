@@ -61,6 +61,7 @@ export default function Home() {
   const [editorContent, setEditorContent] = useState('');
   const [stepResults, setStepResults] = useState<{[key: number]: string}>({});
   const [selectedAnalysisModel, setSelectedAnalysisModel] = useState('auto');
+  const [selectedGenerateModel, setSelectedGenerateModel] = useState('auto');
   const [isGenerating, setIsGenerating] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   
@@ -71,6 +72,12 @@ export default function Home() {
     setEditorContent('');
     setCreativeResult('');
     setStatus('waiting');
+  }, []);
+  
+  // 切换生成模型时清空生成结果
+  const handleGenerateModelChange = useCallback((newModel: string) => {
+    setSelectedGenerateModel(newModel);
+    setCreativeResult('');
   }, []);
   
   // 历史记录 - 保存每个类别的内容
@@ -357,7 +364,7 @@ export default function Home() {
         },
         body: JSON.stringify({
           prompt: editorContent.trim(),
-          model: selectedAnalysisModel, // 使用分析模型
+          model: selectedGenerateModel, // 使用生成模型选择
           contentType,
           lang,
         }),
@@ -376,7 +383,7 @@ export default function Home() {
     } finally {
       setIsGenerating(false);
     }
-  }, [editorContent, sourceFile, selectedAnalysisModel, contentType, lang]);
+  }, [editorContent, sourceFile, selectedGenerateModel, contentType, lang]);
 
   // 社交分享
   const shareToWechat = () => alert(lang === 'zh' ? '请截图后分享到微信' : 'Please screenshot and share to WeChat');
@@ -802,7 +809,7 @@ export default function Home() {
             />
           </div>
 
-          {/* 创意类似+ 按钮 + 打开文件 */}
+          {/* 创意类似+ 按钮 + 打开文件 + 模型选择 */}
           <div className="mb-5">
             <div className="flex items-center justify-end gap-4">
               <button
@@ -829,11 +836,88 @@ export default function Home() {
               >
                 📁 {sourceFile ? (lang === 'zh' ? '已选择文件' : 'File Selected') : (lang === 'zh' ? '打开想要创作的内容（如需要）' : 'Open content (optional)')}
               </button>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">{t('label.model')}</span>
+                <select 
+                  className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-gray-400 w-[140px]"
+                  value={selectedGenerateModel}
+                  onChange={(e) => handleGenerateModelChange(e.target.value)}
+                >
+                  <option value="auto">{t('model.auto')}</option>
+                  {contentType === 'document' && (
+                    <>
+                      {lang === 'zh' ? (
+                        <optgroup label="国内模型 (免费优先)">
+                          <option value="hunyuan-lite">混元Lite (免费)</option>
+                          <option value="qwen-turbo">通义千问 (免费)</option>
+                          <option value="hunyuan-pro">混元Pro</option>
+                        </optgroup>
+                      ) : (
+                        <optgroup label="International Models">
+                          <option value="gpt4o">GPT-4o</option>
+                          <option value="claude">Claude 3.5</option>
+                          <option value="gemini">Gemini Pro</option>
+                        </optgroup>
+                      )}
+                    </>
+                  )}
+                  {contentType === 'image' && (
+                    <>
+                      {lang === 'zh' ? (
+                        <optgroup label="国内模型 (免费优先)">
+                          <option value="qwen-vl">通义千问VL (免费)</option>
+                          <option value="hunyuan-vision">混元视觉 (免费)</option>
+                          <option value="doubao-vision">豆包视觉 (免费)</option>
+                        </optgroup>
+                      ) : (
+                        <optgroup label="International Models">
+                          <option value="gpt4o-vision">GPT-4o Vision</option>
+                          <option value="claude-vision">Claude 3.5 Vision</option>
+                          <option value="gemini">Gemini Pro</option>
+                        </optgroup>
+                      )}
+                    </>
+                  )}
+                  {contentType === 'video' && (
+                    <>
+                      {lang === 'zh' ? (
+                        <optgroup label="国内模型 (免费优先)">
+                          <option value="qwen-vl">通义千问VL (免费)</option>
+                          <option value="hunyuan-vision">混元视觉 (免费)</option>
+                          <option value="doubao-vision">豆包视觉 (免费)</option>
+                        </optgroup>
+                      ) : (
+                        <optgroup label="International Models">
+                          <option value="gpt4o-vision">GPT-4o Vision</option>
+                          <option value="gemini">Gemini Pro</option>
+                        </optgroup>
+                      )}
+                    </>
+                  )}
+                  {contentType === 'website' && (
+                    <>
+                      {lang === 'zh' ? (
+                        <optgroup label="国内模型 (免费优先)">
+                          <option value="hunyuan-lite">混元Lite (免费)</option>
+                          <option value="qwen-turbo">通义千问 (免费)</option>
+                          <option value="hunyuan-pro">混元Pro</option>
+                        </optgroup>
+                      ) : (
+                        <optgroup label="International Models">
+                          <option value="gpt4o">GPT-4o</option>
+                          <option value="claude">Claude 3.5</option>
+                          <option value="gemini">Gemini Pro</option>
+                        </optgroup>
+                      )}
+                    </>
+                  )}
+                </select>
+              </div>
               <button
                 className={`px-8 py-2.5 rounded-xl text-white font-medium shadow-sm ${isGenerating ? 'btn-loading' : 'btn-primary'}`}
                 onClick={handleCreativeGenerate}
                 disabled={isGenerating}
-                title={lang === 'zh' ? '可单独使用提示词，或提示词+源文件一起生成' : 'Can use prompt alone, or prompt + source file together'}
+                title={lang === 'zh' ? '使用上方选择的模型生成类似内容' : 'Use the selected model above to generate similar content'}
               >
                 ✨ {isGenerating ? (lang === 'zh' ? '生成中...' : 'Generating...') : t('btn.similar')}
               </button>
