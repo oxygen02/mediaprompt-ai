@@ -25,7 +25,7 @@ export async function analyzeFile(
 ): Promise<AnalyzeResponse> {
   const formData = new FormData();
   // 根据类别使用正确的字段名
-  const fieldName = category === 'image' ? 'image' : 'file';
+  const fieldName = category === 'image' ? 'image' : category === 'video' ? 'video' : 'file';
   formData.append(fieldName, file);
   formData.append('category', category);
   formData.append('outputOptions', JSON.stringify(outputOptions));
