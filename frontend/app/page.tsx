@@ -525,7 +525,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="p-6 max-w-4xl mx-auto pt-28">
+        <div className="p-6 max-w-5xl mx-auto pt-20">
           {/* 消息区域 */}
           {message && (
             <div className={message.type === 'error' ? 'error-message' : 'success-message'}>
@@ -628,12 +628,12 @@ export default function Home() {
                     </span>
                   ))}
                 </div>
-                {/* 维度选项 */}
-                <div className="flex items-center justify-center gap-1 overflow-x-auto" style={{ flexWrap: 'nowrap' }}>
+                {/* 维度选项 - 自动换行 */}
+                <div className="flex items-center justify-center gap-1.5 flex-wrap">
                   {getOutputOptions().map((option) => (
                     <span
                       key={option.value}
-                      className={`option-tag text-xs flex-shrink-0 ${selectedOptions.includes(option.value) ? 'selected' : ''}`}
+                      className={`option-tag text-xs ${selectedOptions.includes(option.value) ? 'selected' : ''}`}
                       onClick={() => {
                         if (selectedOptions.includes(option.value)) {
                           setSelectedOptions(selectedOptions.filter(v => v !== option.value));
@@ -906,7 +906,7 @@ export default function Home() {
             <div className={`output-card rounded-xl p-4 shadow-sm relative overflow-hidden ${creativeImages.length > 0 ? 'min-h-[auto]' : 'min-h-[80px] flex items-center justify-center'}`}>
               {creativeImages.length > 0 ? (
                 // 图片结果显示 - 2x2网格
-                <div className="grid grid-cols-2 gap-3 w-full">
+                <div className="grid grid-cols-2 gap-4 w-full">
                   {creativeImages.map((imgUrl, index) => (
                     <div key={index} className="relative group aspect-square">
                       <img 

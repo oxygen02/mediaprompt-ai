@@ -122,6 +122,72 @@ body {
   border: 1px solid #e5e5e5;
 }
 
+/* 选项标签容器 - 自动换行 */
+.options-tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  padding-top: 8px;
+  border-top: 1px solid #f0f0f0;
+  margin-top: 8px;
+}
+
+/* 图片网格 - 优化间距 */
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  width: 100%;
+}
+
+/* 图片项悬停效果 */
+.image-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.image-item:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.image-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 图片编号 */
+.image-number {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* 图片下载按钮 */
+.image-download-btn {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.image-item:hover .image-download-btn {
+  opacity: 1;
+}
+
 /* 语言按钮 */
 .lang-btn {
   transition: all 0.15s ease;
@@ -483,6 +549,7 @@ body {
   padding: 12px 16px;
   max-height: 220px;
   overflow-y: auto;
+  min-height: 40px; /* 空状态更紧凑 */
 }
 
 .ai-output-result::-webkit-scrollbar {
