@@ -13,7 +13,7 @@ const fs = require('fs');
 const https = require('https');
 const { URL } = require('url');
 const { getVideoInfo, compressVideo, smartCompress, extractKeyFrames } = require('./utils/video-compress');
-const { analyzeVideoFrames, QWEN_CONFIG } = require('./utils/qwen-vl-analyzer');
+const { analyzeWithQwenVL, analyzeVideoFrames, QWEN_CONFIG } = require('./utils/qwen-vl-analyzer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -92,10 +92,14 @@ app.post('/api/analyze/image', upload.single('image'), async (req, res) => {
     const imagePath = req.file.path;
     const imageBuffer = fs.readFileSync(imagePath);
     const base64Image = imageBuffer.toString('base64');
+    const imageUrl = `data:image/jpeg;base64,${base64Image}`;
     
-    // 构建图片分析提示词
+    // 使用千问VL分析图片
+    console.log('使用千问VL分析图片...');
     const systemPrompt = buildImagePrompt(outputOptions);
-    const result = await callAIWithImage(systemPrompt, base64Image);
+    const userPrompt = '请详细分析这张图片，并生成AI绘画提示词。';
+    
+    const result = await analyzeWithQwenVL(systemPrompt, [imageUrl], userPrompt);
     
     // 清理临时文件
     fs.unlinkSync(imagePath);
@@ -105,6 +109,7 @@ app.post('/api/analyze/image', upload.single('image'), async (req, res) => {
       category: 'image',
       outputOptions,
       result: result,
+      model: 'qwen3-vl-plus',
       timestamp: new Date().toISOString()
     });
     
@@ -357,39 +362,40 @@ app.get('/api/qwen/status', (req, res) => {
  */
 function buildSystemPrompt(category, outputOptions) {
   const prompts = {
-    document: `你是一位专业的内容分析专家，擅长从文档中提炼核心信息并生成结构化的AI提示词。
+    document: `你是一位专业的AI提示词逆向工程师。你的任务是：分析用户提供的AI生成内容，反推出"生成这样内容需要什么提示词"。
 
-请分析用户提供的文档内容，按照以下格式输出：
+## 你的任务
+用户会给你一份由AI生成的内容（文章、文案、代码等），你需要逆向分析：
+1. 这份内容是什么类型的？（文章、故事、报告、营销文案等）
+2. 生成这样内容需要什么样的提示词？
+3. 提示词应该包含哪些关键要素？
 
-## Role
-[定义AI助手的角色定位]
+## 输出格式
+请直接输出可用于AI生成的提示词，格式如下：
 
-## Background
-[描述任务背景和用户需求]
+---
+**推测的原始提示词：**
+\`\`\`
+[这里是推测的原始提示词，要具体、可操作]
+\`\`\`
 
-## Profile
-[详细描述AI助手的专业背景和能力]
+**分析维度：**
+1. **内容类型**：[文章/故事/报告/文案/代码等]
+2. **风格特征**：[正式/轻松/幽默/专业/感性等]
+3. **语言特点**：[简洁/详尽/口语化/书面语等]
+4. **结构特点**：[总分总/并列式/递进式等]
+5. **字数范围**：[估算字数]
 
-## Skills
-[列出所需的核心技能，用逗号分隔]
+**优化建议：**
+[如何改进提示词，生成更好的效果]
+---
 
-## Goals
-[明确任务目标]
+## 重要原则
+1. 提示词要具体、可执行，不要抽象描述
+2. 提示词要包含角色设定、任务要求、输出格式
+3. 分析要基于内容的实际特征，不要臆测
+4. 输出要简洁清晰，便于用户理解和修改`,
 
-## Constrains
-[列出约束条件和注意事项]
-
-## OutputFormat
-[定义输出格式要求]
-
-## Workflow
-[列出工作流程步骤]
-
-## Examples
-[提供2-3个示例]
-
-## Initialization
-[初始化问候语]`,
     image: `你是一位专业的图像分析专家，擅长分析图片并生成AI绘画提示词。
 
 请分析用户描述的图片内容，生成可用于 Midjourney / Stable Diffusion / DALL-E 的提示词。
@@ -401,6 +407,7 @@ function buildSystemPrompt(category, outputOptions) {
 - 光影描述
 - 色彩方案
 - 参数建议`,
+
     video: `你是一位专业的视频内容分析师，擅长分析视频并生成创作提示词。
 
 请分析用户提供的视频描述，生成可用于 Sora / Runway / HeyGen 的提示词。
@@ -411,6 +418,7 @@ function buildSystemPrompt(category, outputOptions) {
 - 人物动作
 - 环境氛围
 - 音效建议`,
+
     website: `你是一位专业的网页设计师，擅长分析网站并生成设计提示词。
 
 请分析用户提供的网页描述，生成可用于前端开发的提示词。
