@@ -62,6 +62,7 @@ export default function Home() {
   const [selectedGenerateModel, setSelectedGenerateModel] = useState('auto');
   const [isGenerating, setIsGenerating] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [inputUrl, setInputUrl] = useState('');
   
   // 切换分析模型时清空结果
   const handleAnalysisModelChange = useCallback((newModel: string) => {
@@ -525,7 +526,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="p-6 max-w-5xl mx-auto pt-20">
+        <div className="p-6 max-w-[920px] mx-auto pt-28">
           {/* 消息区域 */}
           {message && (
             <div className={message.type === 'error' ? 'error-message' : 'success-message'}>
@@ -599,6 +600,40 @@ export default function Home() {
                 </div>
               ) : (
                 <>
+                  {/* URL输入框 */}
+                  <div className="mt-4 mb-3 flex justify-center" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 w-2/3">
+                      <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                      </svg>
+                      <input
+                        type="text"
+                        value={inputUrl}
+                        onChange={(e) => setInputUrl(e.target.value)}
+                        placeholder={lang === 'zh' ? '输入网址...' : 'Enter URL...'}
+                        className="flex-1 text-sm outline-none text-gray-700 placeholder-gray-400"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && inputUrl.trim()) {
+                            // 可以添加URL处理逻辑
+                            console.log('URL input:', inputUrl);
+                          }
+                        }}
+                      />
+                      {inputUrl && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setInputUrl('');
+                          }}
+                          className="text-gray-400 hover:text-gray-600"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  </div>
                   <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-1.5">
                     <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
