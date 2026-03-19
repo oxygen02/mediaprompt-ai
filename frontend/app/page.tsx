@@ -64,6 +64,21 @@ export default function Home() {
   const [selectedAnalysisModel, setSelectedAnalysisModel] = useState('auto');
   const [isGenerating, setIsGenerating] = useState(false);
   
+  // 切换分析模型时清空结果
+  const handleAnalysisModelChange = useCallback((newModel: string) => {
+    setSelectedAnalysisModel(newModel);
+    setResult('');
+    setEditorContent('');
+    setCreativeResult('');
+    setStatus('waiting');
+  }, []);
+  
+  // 切换生成模型时清空结果
+  const handleModelChange = useCallback((newModel: string) => {
+    setSelectedModel(newModel);
+    setCreativeResult('');
+  }, []);
+  
   // 历史记录 - 保存每个类别的内容
   const [history, setHistory] = useState<{
     [key in ContentType]?: {
@@ -154,24 +169,37 @@ export default function Home() {
   // 处理文件选择
   // 切换类别的处理函数
   const handleContentTypeChange = useCallback((newType: ContentType) => {
-    // 如果当前类别有内容，保存到历史
-    if (uploadedFile || result || editorContent || creativeResult) {
-      setHistory(prev => ({
-        ...prev,
-        [contentType]: {
+    // 先获取新类别的历史数据（同步获取）
+    let historyData;
+    setHistory(prev => {
+      // 保存当前类别的内容
+      const newHistory = { ...prev };
+      if (uploadedFile || result || editorContent || creativeResult) {
+        newHistory[contentType] = {
           uploadedFile,
           result,
           editorContent,
           creativeResult
-        }
-      }));
-    }
+        };
+      }
+      // 获取新类别的历史数据
+      historyData = newHistory[newType];
+      return newHistory;
+    });
     
     // 切换到新类别
     setContentType(newType);
     
-    // 恢复新类别的历史内容（如果有）
-    const historyData = history[newType];
+    // 根据类别设置默认选项
+    const defaultOptions: Record<ContentType, string[]> = {
+      document: ['theme', 'genre', 'langStyle', 'tone', 'structure', 'wordCount', 'audience', 'scenario', 'keywords'],
+      image: ['subject', 'style', 'composition', 'lighting', 'colors', 'quality', 'background', 'atmosphere'],
+      video: ['subject', 'camera', 'style', 'lighting', 'quality', 'rhythm', 'logic', 'mood'],
+      website: ['webType', 'style', 'colors', 'layout', 'modules', 'device', 'atmosphere', 'texture'],
+    };
+    setSelectedOptions(defaultOptions[newType]);
+    
+    // 根据是否有历史数据来设置状态
     if (historyData) {
       setUploadedFile(historyData.uploadedFile || null);
       setResult(historyData.result || '');
@@ -179,7 +207,6 @@ export default function Home() {
       setCreativeResult(historyData.creativeResult || '');
       setStatus(historyData.result ? 'success' : 'waiting');
     } else {
-      // 如果没有历史记录，清空
       setUploadedFile(null);
       setResult('');
       setEditorContent('');
@@ -187,7 +214,7 @@ export default function Home() {
       setStatus('waiting');
     }
     setMessage(null);
-  }, [contentType, uploadedFile, result, editorContent, creativeResult, history]);
+  }, [contentType, uploadedFile, result, editorContent, creativeResult]);
 
   const handleFileSelect = useCallback((file: File) => {
     setUploadedFile(file);
@@ -601,7 +628,7 @@ export default function Home() {
               <select 
                 className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-gray-400 w-[140px]"
                 value={selectedAnalysisModel}
-                onChange={(e) => setSelectedAnalysisModel(e.target.value)}
+                onChange={(e) => handleAnalysisModelChange(e.target.value)}
               >
                 <option value="auto">{t('model.auto')}</option>
                 {contentType === 'document' && (
@@ -755,7 +782,7 @@ export default function Home() {
                 <select 
                   className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-gray-400 w-[140px]"
                   value={selectedModel}
-                  onChange={(e) => setSelectedModel(e.target.value)}
+                  onChange={(e) => handleModelChange(e.target.value)}
                 >
                   <option value="auto">{t('model.auto')}</option>
                   <optgroup label={lang === 'zh' ? '文本生成' : 'Text Generation'}>
