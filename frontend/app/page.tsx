@@ -53,14 +53,11 @@ export default function Home() {
   const [creativeResult, setCreativeResult] = useState('');
   const [creativeImages, setCreativeImages] = useState<string[]>([]); // 生成的图片URLs
   const [message, setMessage] = useState<{ text: string; type: 'error' | 'success' } | null>(null);
-  const [thinkingExpanded, setThinkingExpanded] = useState(false);
-  const [thinkingStep, setThinkingStep] = useState(0);
   const [selectedOptions, setSelectedOptions] = useState<string[]>(['theme', 'genre', 'langStyle', 'tone', 'structure', 'wordCount', 'audience', 'scenario', 'keywords']);
   const [selectedVideoSize, setSelectedVideoSize] = useState('16:9');
   const [voiceover, setVoiceover] = useState('');
   const [processText, setProcessText] = useState<TranslationKey>('process.ready');
   const [editorContent, setEditorContent] = useState('');
-  const [stepResults, setStepResults] = useState<{[key: number]: string}>({});
   const [selectedAnalysisModel, setSelectedAnalysisModel] = useState('auto');
   const [selectedGenerateModel, setSelectedGenerateModel] = useState('auto');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -287,17 +284,7 @@ export default function Home() {
 
     setIsLoading(true);
     setStatus('processing');
-    setThinkingExpanded(true);
-
-    // 模拟思考过程动画
-    let step = 0;
-    const thinkingInterval = setInterval(() => {
-      if (step < 10) {
-        setThinkingStep(step);
-        setProcessText(`thinking.step${step + 1}` as TranslationKey);
-        step++;
-      }
-    }, 300);
+    setProcessText('process.analyzing');
 
     try {
       const response = await analyzeFile(
@@ -310,26 +297,25 @@ export default function Home() {
         lang
       );
 
-      clearInterval(thinkingInterval);
-      setThinkingStep(9);
-
       if (response.success && response.result) {
         setResult(response.result);
         setEditorContent(response.result); // 将分析结果填充到"提示词再创作"输入框
         setStatus('success');
+        setProcessText('process.complete');
         setMessage({ text: lang === 'zh' ? '分析完成！可在下方编辑后生成创意内容' : 'Analysis complete! Edit below to generate creative content', type: 'success' });
       } else {
         setStatus('error');
+        setProcessText('process.error');
         setMessage({ text: response.error || (lang === 'zh' ? '分析失败' : 'Analysis failed'), type: 'error' });
       }
     } catch (error) {
-      clearInterval(thinkingInterval);
       setStatus('error');
+      setProcessText('process.error');
       setMessage({ text: lang === 'zh' ? '网络错误' : 'Network error', type: 'error' });
     } finally {
       setIsLoading(false);
     }
-  }, [uploadedFile, contentType, selectedOptions, selectedVideoSize, voiceover, lang]);
+  }, [uploadedFile, contentType, selectedOptions, detailLevel, selectedVideoSize, voiceover, lang]);
 
   // 复制结果
   const handleCopy = useCallback(() => {
