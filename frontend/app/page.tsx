@@ -192,13 +192,6 @@ export default function Home() {
     setEditorContent('');
     setStatus('idle');
   }, [t]);
-    setUploadedFile(file);
-    setMessage({ text: `${t('btn.selectFile')}: ${file.name}`, type: 'success' });
-    // 清空之前的结果
-    setResult('');
-    setEditorContent('');
-    setStatus('idle');
-  }, [t]);
 
   // 处理拖拽上传
   const handleDragOver = useCallback((e: React.DragEvent) => {
