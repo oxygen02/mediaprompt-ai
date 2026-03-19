@@ -51,6 +51,7 @@ export default function Home() {
   const [sourceFile, setSourceFile] = useState<File | null>(null);
   const [result, setResult] = useState('');
   const [creativeResult, setCreativeResult] = useState('');
+  const [creativeImages, setCreativeImages] = useState<string[]>([]); // 生成的图片URLs
   const [message, setMessage] = useState<{ text: string; type: 'error' | 'success' } | null>(null);
   const [thinkingExpanded, setThinkingExpanded] = useState(false);
   const [thinkingStep, setThinkingStep] = useState(0);
@@ -78,6 +79,7 @@ export default function Home() {
   const handleGenerateModelChange = useCallback((newModel: string) => {
     setSelectedGenerateModel(newModel);
     setCreativeResult('');
+    setCreativeImages([]);
   }, []);
   
   // 历史记录 - 保存每个类别的内容
@@ -87,6 +89,7 @@ export default function Home() {
       result: string;
       editorContent: string;
       creativeResult: string;
+      creativeImages: string[];
       previewUrl: string | null;
     }
   }>({});
@@ -176,12 +179,13 @@ export default function Home() {
     setHistory(prev => {
       // 保存当前类别的内容
       const newHistory = { ...prev };
-      if (uploadedFile || result || editorContent || creativeResult) {
+      if (uploadedFile || result || editorContent || creativeResult || creativeImages.length > 0) {
         newHistory[contentType] = {
           uploadedFile,
           result,
           editorContent,
           creativeResult,
+          creativeImages,
           previewUrl
         };
       }
@@ -208,6 +212,7 @@ export default function Home() {
       setResult(historyData.result || '');
       setEditorContent(historyData.editorContent || '');
       setCreativeResult(historyData.creativeResult || '');
+      setCreativeImages(historyData.creativeImages || []);
       setPreviewUrl(historyData.previewUrl || null);
       setStatus(historyData.result ? 'success' : 'waiting');
     } else {
@@ -215,11 +220,12 @@ export default function Home() {
       setResult('');
       setEditorContent('');
       setCreativeResult('');
+      setCreativeImages([]);
       setPreviewUrl(null);
       setStatus('waiting');
     }
     setMessage(null);
-  }, [contentType, uploadedFile, result, editorContent, creativeResult]);
+  }, [contentType, uploadedFile, result, editorContent, creativeResult, creativeImages]);
 
   const handleFileSelect = useCallback((file: File) => {
     setUploadedFile(file);
@@ -353,6 +359,8 @@ export default function Home() {
     }
     
     setIsGenerating(true);
+    setCreativeResult('');
+    setCreativeImages([]);
     setMessage({ text: lang === 'zh' ? '正在生成创意内容...' : 'Generating creative content...', type: 'success' });
     
     try {
@@ -372,13 +380,23 @@ export default function Home() {
       
       const data = await response.json();
       
-      if (data.success && data.result) {
-        setCreativeResult(data.result);
-        setMessage({ text: lang === 'zh' ? '生成完成！' : 'Generation complete!', type: 'success' });
+      if (data.success) {
+        if (data.type === 'image' && data.images && data.images.length > 0) {
+          // 图片结果
+          setCreativeImages(data.images);
+          setMessage({ text: lang === 'zh' ? '图片生成完成！' : 'Images generated!', type: 'success' });
+        } else if (data.type === 'text' && data.result) {
+          // 文本结果
+          setCreativeResult(data.result);
+          setMessage({ text: lang === 'zh' ? '生成完成！' : 'Generation complete!', type: 'success' });
+        } else {
+          setMessage({ text: lang === 'zh' ? '生成失败：返回数据格式错误' : 'Generation failed: Invalid response format', type: 'error' });
+        }
       } else {
         setMessage({ text: data.error || (lang === 'zh' ? '生成失败' : 'Generation failed'), type: 'error' });
       }
     } catch (error) {
+      console.error('生成错误:', error);
       setMessage({ text: lang === 'zh' ? '生成失败' : 'Generation failed', type: 'error' });
     } finally {
       setIsGenerating(false);
@@ -932,9 +950,35 @@ export default function Home() {
           {/* 生成内容区 */}
           <div className="mb-4">
             <div className="output-card rounded-xl p-4 min-h-[80px] shadow-sm flex items-center justify-center relative overflow-hidden">
-              {creativeResult ? (
+              {creativeImages.length > 0 ? (
+                // 图片结果显示
+                <div className="grid grid-cols-2 gap-4 w-full">
+                  {creativeImages.map((imgUrl, index) => (
+                    <div key={index} className="relative group">
+                      <img 
+                        src={imgUrl} 
+                        alt={`生成图片 ${index + 1}`}
+                        className="w-full rounded-lg shadow-md hover:shadow-lg transition-shadow"
+                      />
+                      <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <a 
+                          href={imgUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="bg-black/50 text-white px-3 py-1 rounded text-xs hover:bg-black/70"
+                          download
+                        >
+                          {lang === 'zh' ? '下载' : 'Download'}
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : creativeResult ? (
+                // 文本结果显示
                 <div className="whitespace-pre-wrap text-sm text-gray-700 w-full">{creativeResult}</div>
               ) : (
+                // 默认空状态
                 <div className="moon-container flex items-center justify-center">
                   <div className="moon-base"></div>
                   {/* 流星 - 从左下角到右上角 */}

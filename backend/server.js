@@ -16,6 +16,7 @@ const mammoth = require('mammoth');
 const { getVideoInfo, compressVideo, smartCompress, extractKeyFrames } = require('./utils/video-compress');
 const { analyzeWithQwenVL, analyzeVideoFrames, QWEN_CONFIG } = require('./utils/qwen-vl-analyzer');
 const { smartCompressImage } = require('./utils/image-compress');
+const { generateImage } = require('./utils/image-generate');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -703,11 +704,45 @@ app.post('/api/generate', async (req, res) => {
       return res.status(400).json({ error: '请输入提示词' });
     }
 
-    // 根据模型选择API
-    let systemPrompt = '';
+    // 如果是图片类型，使用图片生成API
+    if (contentType === 'image') {
+      try {
+        console.log(`使用图片生成API: model=${model}`);
+        const imageResult = await generateImage(prompt, model);
+        
+        // 如果返回的是图片URL
+        if (imageResult.success && imageResult.images) {
+          return res.json({
+            success: true,
+            type: 'image',
+            images: imageResult.images,
+            model: imageResult.model,
+            timestamp: new Date().toISOString()
+          });
+        }
+        
+        // 如果返回的是文本结果（优化后的提示词）
+        if (imageResult.type === 'text') {
+          return res.json({
+            success: true,
+            type: 'text',
+            result: cleanResult(imageResult.result),
+            model: imageResult.model,
+            timestamp: new Date().toISOString()
+          });
+        }
+      } catch (imageError) {
+        console.error('图片生成失败，回退到文本生成:', imageError.message);
+        // 图片生成失败时，回退到文本生成
+      }
+    }
+
+    // 文本生成（默认）
     const langPrompt = lang === 'en' 
       ? 'Respond in English only. Do not use any markdown formatting like **, *, #, or `.' 
       : '只用中文回复。不要使用任何markdown格式符号如**、*、#、`。';
+    
+    let systemPrompt = '';
     
     if (contentType === 'image') {
       systemPrompt = lang === 'en'
@@ -727,6 +762,7 @@ app.post('/api/generate', async (req, res) => {
     
     res.json({
       success: true,
+      type: 'text',
       result: cleanResult(result),
       model: model === 'auto' ? CONFIG.model : model,
       timestamp: new Date().toISOString()
