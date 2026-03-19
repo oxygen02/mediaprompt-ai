@@ -20,7 +20,8 @@ export async function analyzeFile(
   outputOptions: string[],
   detailLevel?: 'concise' | 'detailed',
   videoSize?: string,
-  voiceover?: string
+  voiceover?: string,
+  lang?: string
 ): Promise<AnalyzeResponse> {
   const formData = new FormData();
   // 根据类别使用正确的字段名
@@ -30,6 +31,9 @@ export async function analyzeFile(
   formData.append('outputOptions', JSON.stringify(outputOptions));
   if (detailLevel) {
     formData.append('detailLevel', detailLevel);
+  }
+  if (lang) {
+    formData.append('lang', lang);
   }
   
   if (category === 'video') {

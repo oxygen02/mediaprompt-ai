@@ -300,7 +300,8 @@ export default function Home() {
         selectedOptions,
         detailLevel,
         contentType === 'video' ? selectedVideoSize : undefined,
-        contentType === 'video' ? voiceover : undefined
+        contentType === 'video' ? voiceover : undefined,
+        lang
       );
 
       clearInterval(thinkingInterval);
