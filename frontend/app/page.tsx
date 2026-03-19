@@ -547,38 +547,6 @@ export default function Home() {
             </div>
           )}
 
-          {/* AI分析过程折叠区 */}
-          <div className="thinking-collapse">
-            <div className="thinking-header" onClick={() => setThinkingExpanded(!thinkingExpanded)}>
-              <div className="flex items-center gap-2">
-                <svg className={`w-4 h-4 text-gray-500 ${isLoading ? 'animate-pulse' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
-                </svg>
-                <span className={`text-sm font-medium text-gray-700 ${isLoading ? 'animate-pulse' : ''}`}>
-                  {isLoading ? t('thinking.title') : t('thinking.titleWaiting')}
-                </span>
-              </div>
-              <svg className={`w-4 h-4 text-gray-400 transition-transform ${thinkingExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
-              </svg>
-            </div>
-            {thinkingExpanded && (
-              <div className="thinking-content" style={{ maxHeight: '80px', overflowY: 'auto' }}>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((step) => (
-                  <div key={step} className="thinking-step-block">
-                    <div className={`thinking-step ${thinkingStep > step - 1 ? 'done' : ''} ${thinkingStep === step - 1 && isLoading ? 'active' : ''}`}>
-                      <div className="thinking-step-num">{step}</div>
-                      <div className="thinking-step-text">{t(`thinking.step${step}` as TranslationKey)}</div>
-                    </div>
-                    {stepResults[step] && (
-                      <div className="thinking-step-result">{stepResults[step]}</div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
           {/* AI输出面板 */}
           <div className="ai-output-panel mb-5">
             <div className="ai-output-header">
