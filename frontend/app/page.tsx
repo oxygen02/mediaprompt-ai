@@ -60,7 +60,6 @@ export default function Home() {
   const [processText, setProcessText] = useState<TranslationKey>('process.ready');
   const [editorContent, setEditorContent] = useState('');
   const [stepResults, setStepResults] = useState<{[key: number]: string}>({});
-  const [selectedModel, setSelectedModel] = useState('auto');
   const [selectedAnalysisModel, setSelectedAnalysisModel] = useState('auto');
   const [isGenerating, setIsGenerating] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -75,8 +74,6 @@ export default function Home() {
   }, []);
   
   // 切换生成模型时清空结果
-  const handleModelChange = useCallback((newModel: string) => {
-    setSelectedModel(newModel);
     setCreativeResult('');
   }, []);
   
@@ -364,8 +361,9 @@ export default function Home() {
         },
         body: JSON.stringify({
           prompt: editorContent.trim(),
-          model: selectedModel,
+          model: selectedAnalysisModel, // 使用分析模型
           contentType,
+          lang,
         }),
       });
       
@@ -377,13 +375,12 @@ export default function Home() {
       } else {
         setMessage({ text: data.error || (lang === 'zh' ? '生成失败' : 'Generation failed'), type: 'error' });
       }
-      setMessage({ text: lang === 'zh' ? '生成完成！' : 'Generation complete!', type: 'success' });
     } catch (error) {
       setMessage({ text: lang === 'zh' ? '生成失败' : 'Generation failed', type: 'error' });
     } finally {
       setIsGenerating(false);
     }
-  }, [editorContent, sourceFile, selectedModel, lang]);
+  }, [editorContent, sourceFile, selectedAnalysisModel, contentType, lang]);
 
   // 社交分享
   const shareToWechat = () => alert(lang === 'zh' ? '请截图后分享到微信' : 'Please screenshot and share to WeChat');
@@ -809,7 +806,7 @@ export default function Home() {
             />
           </div>
 
-          {/* 创意类似+ 按钮 + 打开文件 + 模型选择 */}
+          {/* 创意类似+ 按钮 + 打开文件 */}
           <div className="mb-5">
             <div className="flex items-center justify-end gap-4">
               <button
@@ -817,6 +814,7 @@ export default function Home() {
                 onClick={() => {
                   const input = document.createElement('input');
                   input.type = 'file';
+                  input.accept = contentType === 'image' ? 'image/*' : contentType === 'video' ? 'video/*' : '*/*';
                   input.onchange = (ev: any) => { 
                     const file = ev.target.files?.[0];
                     if (file) {
@@ -835,40 +833,6 @@ export default function Home() {
               >
                 📁 {sourceFile ? (lang === 'zh' ? '已选择文件' : 'File Selected') : (lang === 'zh' ? '打开想要创作的内容（如需要）' : 'Open content (optional)')}
               </button>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">{t('label.model')}</span>
-                <select 
-                  className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-gray-400 w-[140px]"
-                  value={selectedModel}
-                  onChange={(e) => handleModelChange(e.target.value)}
-                >
-                  <option value="auto">{t('model.auto')}</option>
-                  <optgroup label={lang === 'zh' ? '文本生成' : 'Text Generation'}>
-                    <option value="hunyuan-lite">混元Lite (免费)</option>
-                    <option value="qwen-turbo">通义千问 (免费)</option>
-                    <option value="gpt4o">GPT-4o</option>
-                    <option value="claude">Claude 3.5</option>
-                  </optgroup>
-                  <optgroup label={lang === 'zh' ? '图片生成' : 'Image Generation'}>
-                    <option value="flux">Flux (免费)</option>
-                    <option value="stable">Stable Diffusion</option>
-                    <option value="midjourney">Midjourney</option>
-                    <option value="dalle">DALL-E 3</option>
-                  </optgroup>
-                  <optgroup label={lang === 'zh' ? '视频生成' : 'Video Generation'}>
-                    <option value="runway">Runway</option>
-                    <option value="pika">Pika</option>
-                    <option value="sora">Sora</option>
-                    <option value="kling">可灵AI</option>
-                  </optgroup>
-                  <optgroup label={lang === 'zh' ? '网页生成' : 'Website Generation'}>
-                    <option value="v0">V0</option>
-                    <option value="cursor">Cursor</option>
-                    <option value="bolt">Bolt.new</option>
-                    <option value="trae">Trae (免费)</option>
-                  </optgroup>
-                </select>
-              </div>
               <button
                 className={`px-8 py-2.5 rounded-xl text-white font-medium shadow-sm ${isGenerating ? 'btn-loading' : 'btn-primary'}`}
                 onClick={handleCreativeGenerate}
