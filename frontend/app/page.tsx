@@ -3,6 +3,10 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { i18n, Language, TranslationKey } from '@/lib/i18n';
 import { analyzeFile, analyzeText, previewOutput } from '@/lib/api';
+import dynamic from 'next/dynamic';
+
+// 动态导入提示词库组件（避免 SSR 问题）
+const PromptLibrary = dynamic(() => import('@/components/PromptLibrary'), { ssr: false });
 
 // 类型定义
 type ContentType = 'document' | 'image' | 'video' | 'website';
@@ -63,6 +67,7 @@ export default function Home() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [inputUrl, setInputUrl] = useState('');
+  const [showPromptLibrary, setShowPromptLibrary] = useState(false);
   
   // 切换分析模型时清空结果
   const handleAnalysisModelChange = useCallback((newModel: string) => {
@@ -504,7 +509,7 @@ export default function Home() {
             <div className="text-center mb-3">
               <p className="text-gray-500 text-sm">{t('header.subtext')}</p>
             </div>
-            <div className="flex gap-2 justify-center">
+            <div className="flex gap-2 justify-center flex-wrap">
               {(['document', 'image', 'video', 'website'] as ContentType[]).map((type, index) => {
                 const moonClasses = ['moon-95', 'moon-70', 'moon-40', 'moon-full'];
                 return (
@@ -522,6 +527,16 @@ export default function Home() {
                   </button>
                 );
               })}
+              {/* 提示词库按钮 */}
+              <button
+                className="px-4 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 shadow-sm"
+                onClick={() => setShowPromptLibrary(true)}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                <span>{lang === 'zh' ? '提示词库' : 'Prompts'}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -1015,6 +1030,35 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* 提示词库弹窗 */}
+      {showPromptLibrary && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setShowPromptLibrary(false)}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900">
+                {lang === 'zh' ? '提示词库' : 'Prompt Library'}
+              </h2>
+              <button 
+                onClick={() => setShowPromptLibrary(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <PromptLibrary 
+              lang={lang}
+              onSelectPrompt={(prompt) => {
+                // 将生成的提示词填充到输入框或执行其他操作
+                console.log('Selected prompt:', prompt);
+                setShowPromptLibrary(false);
+              }}
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 }
