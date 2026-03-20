@@ -283,9 +283,17 @@ export default function Home() {
 
   // 分析内容
   const handleAnalyze = useCallback(async () => {
-    if (!uploadedFile) {
-      setMessage({ text: lang === 'zh' ? '请先上传文件' : 'Please upload a file first', type: 'error' });
-      return;
+    // 网页类别可以用URL或截图
+    if (contentType === 'website') {
+      if (!uploadedFile && !inputUrl.trim()) {
+        setMessage({ text: lang === 'zh' ? '请输入网址或上传网页截图' : 'Please enter a URL or upload a screenshot', type: 'error' });
+        return;
+      }
+    } else {
+      if (!uploadedFile) {
+        setMessage({ text: lang === 'zh' ? '请先上传文件' : 'Please upload a file first', type: 'error' });
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -293,15 +301,25 @@ export default function Home() {
     setProcessText('process.analyzing');
 
     try {
-      const response = await analyzeFile(
-        uploadedFile,
-        contentType,
-        selectedOptions,
-        detailLevel,
-        contentType === 'video' ? selectedVideoSize : undefined,
-        contentType === 'video' ? voiceover : undefined,
-        lang
-      );
+      let response;
+
+      // 网页类别优先使用URL（自动截图+AI分析）
+      if (contentType === 'website' && inputUrl.trim()) {
+        const { analyzeUrl } = await import('@/lib/api');
+        response = await analyzeUrl(inputUrl.trim(), selectedOptions, detailLevel, lang);
+      } else if (uploadedFile) {
+        response = await analyzeFile(
+          uploadedFile,
+          contentType,
+          selectedOptions,
+          detailLevel,
+          contentType === 'video' ? selectedVideoSize : undefined,
+          contentType === 'video' ? voiceover : undefined,
+          lang
+        );
+      } else {
+        throw new Error('No input provided');
+      }
 
       if (response.success && response.result) {
         setResult(response.result);
@@ -321,7 +339,7 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
-  }, [uploadedFile, contentType, selectedOptions, detailLevel, selectedVideoSize, voiceover, lang]);
+  }, [uploadedFile, contentType, selectedOptions, detailLevel, selectedVideoSize, voiceover, lang, inputUrl]);
 
   // 复制结果
   const handleCopy = useCallback(() => {
@@ -448,10 +466,24 @@ export default function Home() {
             <span>{t('nav.website')}</span>
           </a>
           
-          <div className="text-xs text-gray-400 px-3 py-2 mt-4">{t('nav.cases')}</div>
-          <a href="/cases" className="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500">
+          <div className="text-xs text-gray-400 px-3 py-2 mt-4">{t('nav.editBox')}</div>
+          <a href="/edit/image-text" className="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <span>{t('nav.imageText')}</span>
+          </a>
+          <a href="/edit/video" className="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            <span>{t('nav.videoEdit')}</span>
+          </a>
+          <a href="/edit/web-preview" className="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            <span>{t('nav.webPreview')}</span>
+          </a>
+          
+          <div className="text-xs text-gray-400 px-3 py-2 mt-4">提示词库</div>
+          <a href="#" className="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500" onClick={(e) => { e.preventDefault(); setShowPromptLibrary(true); }}>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-            <span>{t('nav.documentCase')}</span>
+            <span>{lang === 'zh' ? '提示词库' : 'Prompts'}</span>
           </a>
           
           <div className="text-xs text-gray-400 px-3 py-2 mt-4">{t('nav.personal')}</div>
@@ -480,7 +512,7 @@ export default function Home() {
       {/* 主内容区 */}
       <div className="main-content">
         {/* 顶部导航栏 */}
-        <nav className="h-14 border-b border-gray-200 flex items-center justify-between px-8 bg-white sticky top-0 z-10">
+        <nav className="top-nav h-14 border-b border-gray-200 flex items-center justify-between px-8 bg-white fixed top-0 left-52 right-0 z-30">
           <div className="flex items-center gap-6">
             <a href="#" className="text-sm text-gray-800 font-medium">{t('top.home')}</a>
             <a href="#" className="text-sm text-gray-500">{t('top.pricing')}</a>
@@ -527,16 +559,6 @@ export default function Home() {
                   </button>
                 );
               })}
-              {/* 提示词库按钮 */}
-              <button
-                className="px-4 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 shadow-sm"
-                onClick={() => setShowPromptLibrary(true)}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
-                <span>{lang === 'zh' ? '提示词库' : 'Prompts'}</span>
-              </button>
             </div>
           </div>
         </div>
@@ -587,12 +609,12 @@ export default function Home() {
                 ref={fileInputRef}
                 type="file"
                 className="hidden"
-                accept={contentType === 'image' ? 'image/*' : contentType === 'video' ? 'video/*' : contentType === 'website' ? '.html,.htm,.zip' : undefined}
+                accept={contentType === 'image' || contentType === 'website' ? 'image/*' : contentType === 'video' ? 'video/*' : undefined}
                 onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
               />
               
               {/* 缩略图预览 */}
-              {previewUrl && (contentType === 'image' || contentType === 'video') ? (
+              {previewUrl && (contentType === 'image' || contentType === 'video' || contentType === 'website') ? (
                 <div className="preview-container relative">
                   <img 
                     src={previewUrl} 
@@ -600,61 +622,95 @@ export default function Home() {
                     className="max-h-[120px] mx-auto rounded-lg shadow-sm object-contain"
                   />
                   <div className="mt-2 text-sm text-gray-600">{uploadedFile?.name}</div>
-                  <div className="absolute top-1 right-1 bg-black/50 text-white text-xs px-2 py-0.5 rounded">
-                    {contentType === 'video' ? '🎬 视频' : '📷 图片'}
+                  <div className="absolute top-1 right-1 flex items-center gap-1">
+                    <div className="bg-black/50 text-white text-xs px-2 py-0.5 rounded">
+                      {contentType === 'video' ? '🎬 视频' : contentType === 'website' ? '🌐 网页截图' : '📷 图片'}
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setUploadedFile(null);
+                        setPreviewUrl(null);
+                        if (fileInputRef.current) {
+                          fileInputRef.current.value = '';
+                        }
+                      }}
+                      className="bg-red-500 hover:bg-red-600 text-white rounded-full p-1 transition-colors"
+                      title={lang === 'zh' ? '删除文件' : 'Remove file'}
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
+                      </svg>
+                    </button>
                   </div>
-                </div>
-              ) : uploadedFile && contentType === 'website' ? (
-                <div className="preview-container">
-                  <div className="w-12 h-12 mx-auto mb-2 rounded-lg bg-gray-100 flex items-center justify-center">
-                    <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
-                    </svg>
-                  </div>
-                  <p className="text-gray-600 text-sm">{uploadedFile.name}</p>
                 </div>
               ) : (
                 <>
-                  {/* URL输入框 */}
-                  <div className="mt-4 mb-3 flex justify-center" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 w-2/3">
-                      <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
-                      </svg>
-                      <input
-                        type="text"
-                        value={inputUrl}
-                        onChange={(e) => setInputUrl(e.target.value)}
-                        placeholder={lang === 'zh' ? '输入网址...' : 'Enter URL...'}
-                        className="flex-1 text-sm outline-none text-gray-700 placeholder-gray-400"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && inputUrl.trim()) {
-                            // 可以添加URL处理逻辑
-                            console.log('URL input:', inputUrl);
-                          }
-                        }}
-                      />
-                      {inputUrl && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setInputUrl('');
+                  {/* URL输入框 - 仅网页类别显示 */}
+                  {contentType === 'website' && (
+                    <div className="mt-4 mb-3 flex justify-center" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 w-2/3">
+                        <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                        </svg>
+                        <input
+                          type="text"
+                          value={inputUrl}
+                          onChange={(e) => setInputUrl(e.target.value)}
+                          placeholder={lang === 'zh' ? '输入网址...' : 'Enter URL...'}
+                          className="flex-1 text-sm outline-none text-gray-700 placeholder-gray-400"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && inputUrl.trim()) {
+                              console.log('URL input:', inputUrl);
+                            }
                           }}
-                          className="text-gray-400 hover:text-gray-600"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
-                          </svg>
-                        </button>
-                      )}
+                        />
+                        {inputUrl && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setInputUrl('');
+                            }}
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
                   <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-1.5">
                     <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                     </svg>
                   </div>
-                  <p className="text-gray-600 text-sm mb-0.5">{uploadedFile ? uploadedFile.name : t('upload.drag')}</p>
+                  <div className="flex items-center justify-center gap-2">
+                    <p className="text-gray-600 text-sm">{uploadedFile ? uploadedFile.name : t('upload.drag')}</p>
+                    {uploadedFile && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setUploadedFile(null);
+                          setPreviewUrl(null);
+                          setResult('');
+                          setEditorContent('');
+                          setCreativeResult('');
+                          setCreativeImages([]);
+                          if (fileInputRef.current) {
+                            fileInputRef.current.value = '';
+                          }
+                        }}
+                        className="bg-red-500 hover:bg-red-600 text-white rounded-full p-1 transition-colors"
+                        title={lang === 'zh' ? '删除文件' : 'Remove file'}
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                   <p className="text-gray-400 text-xs">{getFileHint()}</p>
                 </>
               )}
@@ -839,7 +895,7 @@ export default function Home() {
                 onClick={() => {
                   const input = document.createElement('input');
                   input.type = 'file';
-                  input.accept = contentType === 'image' ? 'image/*' : contentType === 'video' ? 'video/*' : '*/*';
+                  input.accept = contentType === 'image' || contentType === 'website' ? 'image/*' : contentType === 'video' ? 'video/*' : '*/*';
                   input.onchange = (ev: any) => { 
                     const file = ev.target.files?.[0];
                     if (file) {

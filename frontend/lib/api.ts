@@ -25,7 +25,7 @@ export async function analyzeFile(
 ): Promise<AnalyzeResponse> {
   const formData = new FormData();
   // 根据类别使用正确的字段名
-  const fieldName = category === 'image' ? 'image' : category === 'video' ? 'video' : 'file';
+  const fieldName = category === 'image' || category === 'website' ? 'image' : category === 'video' ? 'video' : 'file';
   formData.append(fieldName, file);
   formData.append('category', category);
   formData.append('outputOptions', JSON.stringify(outputOptions));
@@ -44,7 +44,7 @@ export async function analyzeFile(
   try {
     // 根据文件类型选择正确的API端点
     let endpoint = '/api/analyze/file';
-    if (category === 'image') {
+    if (category === 'image' || category === 'website') {
       endpoint = '/api/analyze/image';
     } else if (category === 'video') {
       endpoint = '/api/analyze/video';
@@ -81,6 +81,36 @@ export async function analyzeText(
       content,
       category,
       outputOptions,
+    }, {
+      timeout: 120000,
+    });
+    return response.data;
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      return {
+        success: false,
+        error: error.response?.data?.error || error.message || 'Network error',
+      };
+    }
+    return {
+      success: false,
+      error: 'Unknown error',
+    };
+  }
+}
+
+export async function analyzeUrl(
+  url: string,
+  outputOptions: string[],
+  detailLevel?: 'concise' | 'detailed',
+  lang?: string
+): Promise<AnalyzeResponse> {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/api/analyze/url`, {
+      url,
+      outputOptions,
+      detailLevel,
+      lang,
     }, {
       timeout: 120000,
     });
