@@ -10,7 +10,7 @@ const PromptLibrary = dynamic(() => import('@/components/PromptLibrary'), { ssr:
 
 // 类型定义
 type ContentType = 'document' | 'image' | 'video' | 'website';
-type Status = 'waiting' | 'processing' | 'success' | 'error';
+type Status = 'waiting' | 'processing' | 'success' | 'error' | 'idle';
 
 // 社交媒体SVG图标
 const WechatIcon = () => (
@@ -178,7 +178,7 @@ export default function Home() {
   // 切换类别的处理函数
   const handleContentTypeChange = useCallback((newType: ContentType) => {
     // 先获取新类别的历史数据（同步获取）
-    let historyData;
+    let historyData: { uploadedFile: File | null; result: string; editorContent: string; creativeResult: string; creativeImages: string[]; previewUrl: string | null; } | undefined;
     setHistory(prev => {
       // 保存当前类别的内容
       const newHistory = { ...prev };

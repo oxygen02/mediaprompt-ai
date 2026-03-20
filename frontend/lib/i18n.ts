@@ -113,6 +113,9 @@ export const i18n = {
     'status.success': '分析完成',
     'status.error': '分析失败',
     'process.ready': '准备就绪，等待上传文件...',
+    'process.analyzing': '正在分析中...',
+    'process.complete': '分析完成',
+    'process.error': '分析失败',
     'result.placeholder': 'AI分析结果将显示在这里...',
     // 预览
     'preview.title': '创意类似+',
@@ -174,6 +177,7 @@ export const i18n = {
     'count.4': '4 images',
     // Output Options
     'options.title': 'Prompt Options',
+    'options.hint': 'Select analysis dimensions',
     'opt.prompt': 'Prompt',
     // Document options
     'opt.theme': 'Core Theme',
@@ -234,6 +238,9 @@ export const i18n = {
     'status.success': 'Complete',
     'status.error': 'Error',
     'process.ready': 'Ready, waiting for file upload...',
+    'process.analyzing': 'Analyzing...',
+    'process.complete': 'Complete',
+    'process.error': 'Error',
     'result.placeholder': 'Upload content and click "Analyze" to generate prompt',
     // Preview
     'preview.title': 'Similar Ideas+',

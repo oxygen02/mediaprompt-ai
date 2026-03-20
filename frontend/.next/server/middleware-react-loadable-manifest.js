@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST="{}"
+self.__REACT_LOADABLE_MANIFEST='{"app/page.tsx -> @/components/PromptLibrary":{"id":8242,"files":["static/chunks/242.0e45438104413513.js"]}}';
