@@ -1,4 +1,4 @@
-# MediaPrompt AI - 精简版产品定义
+# PromptBox AI - 精简版产品定义
 
 ## 核心定位
 

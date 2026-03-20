@@ -1,4 +1,4 @@
-# MediaPrompt AI - 测试报告
+# PromptBox AI - 测试报告
 
 ## 测试环境
 - 前端：http://124.156.200.127:3002

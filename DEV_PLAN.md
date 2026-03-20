@@ -1,4 +1,4 @@
-# MediaPrompt AI - 开发计划
+# PromptBox AI - 开发计划
 
 ## 📊 当前状态
 

@@ -1,4 +1,4 @@
-# MediaPrompt AI - ROI 分析与收费模式
+# PromptBox AI - ROI 分析与收费模式
 
 ---
 

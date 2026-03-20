@@ -1,4 +1,4 @@
-# MediaPrompt AI 产品建议书
+# PromptBox AI 产品建议书
 
 ## 一、一句话定位
 

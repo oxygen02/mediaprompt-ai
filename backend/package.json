@@ -1,7 +1,7 @@
 {
-  "name": "mediaprompt-api",
+  "name": "promptbox-api",
   "version": "1.0.0",
-  "description": "MediaPrompt AI Backend API",
+  "description": "PromptBox AI Backend API",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

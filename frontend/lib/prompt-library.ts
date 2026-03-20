@@ -1,5 +1,5 @@
 /**
- * MediaPrompt AI 提示词库
+ * PromptBox AI 提示词库
  * 本地提示词模板，无需 API 调用
  */
 

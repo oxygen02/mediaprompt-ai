@@ -439,13 +439,51 @@ export default function Home() {
 
   return (
     <>
+      {/* 顶部导航栏 - 仅首页显示 */}
+      <nav className="fixed top-0 left-44 right-0 h-14 bg-white border-b border-gray-200 flex items-center justify-between px-8 z-30">
+        <div className="flex items-center gap-8">
+          {/* Logo和Slogan */}
+          <div className="flex items-center gap-3">
+            <span className="font-semibold text-gray-800">PromptBox</span>
+            <span className="text-gray-400 text-sm hidden md:inline">| AI驱动的创意提示词平台</span>
+          </div>
+          
+          {/* 导航链接 */}
+          <div className="hidden md:flex items-center gap-6">
+            <a href="/" className="text-sm font-medium text-gray-800">首页</a>
+            <a href="/pricing" className="text-sm text-gray-500 hover:text-gray-800">定价</a>
+            <a href="/about" className="text-sm text-gray-500 hover:text-gray-800">关于</a>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          {/* 中英文切换 */}
+          <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setLang('zh')}
+              className={`px-3 py-1 rounded text-sm ${lang === 'zh' ? 'bg-white shadow-sm' : 'text-gray-500'}`}
+            >中文</button>
+            <button
+              onClick={() => setLang('en')}
+              className={`px-3 py-1 rounded text-sm ${lang === 'en' ? 'bg-white shadow-sm' : 'text-gray-500'}`}
+            >EN</button>
+          </div>
+          
+          {/* 登录/注册 */}
+          <div className="flex items-center gap-2">
+            <button className="text-sm text-gray-500 hover:text-gray-800">{lang === 'zh' ? '登录' : 'Login'}</button>
+            <button className="text-sm bg-indigo-500 text-white px-4 py-1.5 rounded-lg hover:bg-indigo-600">{lang === 'zh' ? '注册' : 'Sign Up'}</button>
+          </div>
+        </div>
+      </nav>
+
       {/* 左侧固定导航栏 */}
-      <aside className="sidebar w-52 flex-shrink-0 flex flex-col">
+      <aside className="sidebar w-44 flex-shrink-0 flex flex-col">
         <div className="h-14 px-4 border-b border-gray-200 flex items-center">
           <div className="w-8 h-8 rounded-lg logo-bg flex items-center justify-center">
             <span className="text-white font-bold text-sm">M</span>
           </div>
-          <span className="font-semibold text-gray-800 ml-2">MediaPrompt</span>
+          <span className="font-semibold text-gray-800 ml-2">PromptBox</span>
         </div>
         <nav className="flex-1 p-3 overflow-y-auto">
           <div className="text-xs text-gray-400 px-3 py-2">{t('nav.tools')}</div>
@@ -512,7 +550,7 @@ export default function Home() {
       {/* 主内容区 */}
       <div className="main-content">
         {/* 顶部导航栏 */}
-        <nav className="top-nav h-14 border-b border-gray-200 flex items-center justify-between px-8 bg-white fixed top-0 left-52 right-0 z-30">
+        <nav className="top-nav h-14 border-b border-gray-200 flex items-center justify-between px-8 bg-white fixed top-0 left-44 right-0 z-30">
           <div className="flex items-center gap-6">
             <a href="#" className="text-sm text-gray-800 font-medium">{t('top.home')}</a>
             <a href="#" className="text-sm text-gray-500">{t('top.pricing')}</a>

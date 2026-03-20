@@ -1,4 +1,4 @@
-# MediaPrompt AI 项目
+# PromptBox AI 项目
 
 ## 项目简介
 内容反向工程工具箱，从优质内容中提炼AI提示词，让美好可以复刻迭代。
@@ -11,13 +11,13 @@
 | **技术文档** | https://feishu.cn/docx/SG9CdmD3kozQrVxMsWRcNvWbn7F |
 
 ## 在线演示
-- **前端页面**: https://oliveryoung1983-1409675040.cos.ap-singapore.myqcloud.com/mediaprompt/index-v21.html
+- **前端页面**: https://oliveryoung1983-1409675040.cos.ap-singapore.myqcloud.com/promptbox/index-v21.html
 - **后端 API**: http://124.156.200.127:3001
 
 ## 目录结构
 
 ```
-mediaprompt-ai/
+promptbox-ai/
 ├── prototype/           # 前端页面
 │   ├── index-v21.html   # 最新版本
 │   └── ...

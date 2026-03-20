@@ -1,4 +1,4 @@
-# MediaPrompt AI Backend
+# PromptBox AI Backend
 
 对接腾讯云混元大模型的后端 API 服务。
 
@@ -104,8 +104,8 @@ npm start
 
 ### Docker 部署
 ```bash
-docker build -t mediaprompt-api .
-docker run -p 3000:3000 --env-file .env mediaprompt-api
+docker build -t promptbox-api .
+docker run -p 3000:3000 --env-file .env promptbox-api
 ```
 
 ### 云函数部署

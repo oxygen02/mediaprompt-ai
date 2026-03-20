@@ -1,11 +1,12 @@
+'use client';
+
 import React from 'react';
+import EditLayout from '../layout';
 
 export default function WebPreviewPage() {
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">网页预览</h1>
-        
+    <EditLayout title="网页预览" currentPath="web-preview">
+      <div className="p-6 max-w-6xl mx-auto">
         <div className="grid grid-cols-3 gap-6">
           {/* 左侧：关键词输入 */}
           <div className="bg-white rounded-xl p-6 shadow-sm">
@@ -37,7 +38,7 @@ export default function WebPreviewPage() {
           </div>
         </div>
         
-        {/* 右侧：对接工具 */}
+        {/* 对接工具 */}
         <div className="mt-6 grid grid-cols-3 gap-6">
           <div className="bg-white rounded-xl p-4 shadow-sm">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">设计工具</h3>
@@ -66,19 +67,7 @@ export default function WebPreviewPage() {
             </div>
           </div>
         </div>
-        
-        {/* 功能说明 */}
-        <div className="mt-8 bg-purple-50 rounded-xl p-6">
-          <h3 className="text-sm font-semibold text-purple-800 mb-2">功能规划</h3>
-          <ul className="text-sm text-purple-700 space-y-1">
-            <li>• 用户输入关键词生成网页预览图</li>
-            <li>• 支持局部标注和备注说明修改需求</li>
-            <li>• 灵活的网页版型设计编辑器</li>
-            <li>• 对接全网合适工具（Figma、Webflow、V0.dev等）</li>
-            <li>• 支持导出为设计稿或前端代码</li>
-          </ul>
-        </div>
       </div>
-    </div>
+    </EditLayout>
   );
 }

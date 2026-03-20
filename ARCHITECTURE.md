@@ -1,4 +1,4 @@
-# MediaPrompt AI 系统架构
+# PromptBox AI 系统架构
 
 ## 架构总览
 
@@ -140,7 +140,7 @@
 ## 文件结构建议
 
 ```
-mediaprompt-ai/
+promptbox-ai/
 ├── apps/
 │   ├── web/                 # Next.js 前端
 │   │   ├── app/

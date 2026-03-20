@@ -1,4 +1,4 @@
-// File: /root/.openclaw/workspace/mediaprompt-ai/frontend/app/page.tsx
+// File: /root/.openclaw/workspace/promptbox-ai/frontend/app/page.tsx
 import * as entry from '../../../app/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

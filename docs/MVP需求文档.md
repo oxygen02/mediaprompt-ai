@@ -1,4 +1,4 @@
-# MediaPrompt AI - MVP需求文档
+# PromptBox AI - MVP需求文档
 
 **版本：** v1.0  
 **日期：** 2026-03-18  
@@ -9,7 +9,7 @@
 ## 一、产品概述
 
 ### 1.1 产品名称
-MediaPrompt AI - 媒体提示词智能分析平台
+PromptBox AI - 媒体提示词智能分析平台
 
 ### 1.2 产品定位
 一款基于AI的媒体内容分析工具，将文档、图片、视频、网页转化为可复用的AI提示词。
@@ -264,4 +264,4 @@ MediaPrompt AI - 媒体提示词智能分析平台
 
 ---
 
-*MVP文档 - MediaPrompt AI*
+*MVP文档 - PromptBox AI*

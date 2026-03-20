@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'MediaPrompt AI - Content Reverse Engineering Toolkit',
+  title: 'PromptBox AI - Content Reverse Engineering Toolkit',
   description: 'Upload content you like, extract effective prompts, make beauty reproducible',
 };
 

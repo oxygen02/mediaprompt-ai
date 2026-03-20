@@ -1,4 +1,4 @@
-# MediaPrompt AI - 技术文档
+# PromptBox AI - 技术文档
 
 > 版本：v1.0 (基于 index-v20)  
 > 更新日期：2026-03-18
@@ -8,7 +8,7 @@
 ## 一、项目概述
 
 ### 1.1 项目名称
-MediaPrompt AI - 内容反向工程工具箱
+PromptBox AI - 内容反向工程工具箱
 
 ### 1.2 项目描述
 一款帮助非技术用户从已有内容中提炼 AI 提示词的 Web 应用。
@@ -32,7 +32,7 @@ MediaPrompt AI - 内容反向工程工具箱
 ### 2.1 目录结构
 
 ```
-mediaprompt-web/
+promptbox-web/
 ├── src/
 │   ├── app/
 │   │   ├── layout.tsx      # 根布局
@@ -264,11 +264,11 @@ COS_REGION=ap-singapore
 
 ```bash
 # 前端
-cd /root/.openclaw/workspace/project/mediaprompt-web
+cd /root/.openclaw/workspace/project/promptbox-web
 npm run dev -- -H 0.0.0.0 -p 3002
 
 # 后端
-cd /root/.openclaw/workspace/mediaprompt-ai/backend
+cd /root/.openclaw/workspace/promptbox-ai/backend
 node server.js
 ```
 
@@ -280,7 +280,7 @@ node server.js
 
 | 项目 | 值 |
 |------|------|
-| 仓库地址 | https://github.com/oxygen02/mediaprompt-ai |
+| 仓库地址 | https://github.com/oxygen02/promptbox-ai |
 | 默认分支 | master |
 | Next.js 分支 | nextjs |
 
@@ -308,9 +308,9 @@ git push origin master
 
 | 文件 | URL |
 |------|------|
-| index-v20.html | https://oliveryoung1983-1409675040.cos.ap-singapore.myqcloud.com/mediaprompt/index-v20.html |
-| index-v21.html | https://oliveryoung1983-1409675040.cos.ap-singapore.myqcloud.com/mediaprompt/index-v21.html |
-| cases.html | https://oliveryoung1983-1409675040.cos.ap-singapore.myqcloud.com/mediaprompt/cases.html |
+| index-v20.html | https://oliveryoung1983-1409675040.cos.ap-singapore.myqcloud.com/promptbox/index-v20.html |
+| index-v21.html | https://oliveryoung1983-1409675040.cos.ap-singapore.myqcloud.com/promptbox/index-v21.html |
+| cases.html | https://oliveryoung1983-1409675040.cos.ap-singapore.myqcloud.com/promptbox/cases.html |
 
 ---
 

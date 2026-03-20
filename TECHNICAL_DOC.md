@@ -1,9 +1,9 @@
-# MediaPrompt AI - 技术文档 v1.0
+# PromptBox AI - 技术文档 v1.0
 
 ## 项目结构
 
 ```
-mediaprompt-ai/
+promptbox-ai/
 ├── frontend/                    # Next.js 前端项目
 │   ├── app/
 │   │   ├── layout.tsx          # 根布局组件
@@ -268,17 +268,17 @@ export class AIService {
 
 ```bash
 # 启动前端
-pm2 start npm --name "mediaprompt-frontend" -- run dev
+pm2 start npm --name "promptbox-frontend" -- run dev
 
 # 启动后端
-pm2 start npm --name "mediaprompt-api" -- run dev
+pm2 start npm --name "promptbox-api" -- run dev
 
 # 查看状态
 pm2 status
 
 # 重启
-pm2 restart mediaprompt-frontend
-pm2 restart mediaprompt-api
+pm2 restart promptbox-frontend
+pm2 restart promptbox-api
 ```
 
 ### Nginx 配置（可选）
