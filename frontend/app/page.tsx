@@ -170,8 +170,8 @@ export default function Home() {
 
   // 输出详细程度选项
   const detailLevels = [
-    { value: 'concise', label: '简洁' },
-    { value: 'detailed', label: '详细' },
+    { value: 'concise', label: lang === 'zh' ? '简洁' : 'Concise' },
+    { value: 'detailed', label: lang === 'zh' ? '详细' : 'Detailed' },
   ];
 
   // 处理文件选择
@@ -450,9 +450,9 @@ export default function Home() {
           
           {/* 导航链接 */}
           <div className="hidden md:flex items-center gap-6">
-            <a href="/" className="text-sm font-medium text-gray-800">首页</a>
-            <a href="/pricing" className="text-sm text-gray-500 hover:text-gray-800">定价</a>
-            <a href="/about" className="text-sm text-gray-500 hover:text-gray-800">关于</a>
+            <a href="/" className="text-sm font-medium text-gray-800">{t('top.home')}</a>
+            <a href="/pricing" className="text-sm text-gray-500 hover:text-gray-800">{t('top.pricing')}</a>
+            <a href="/about" className="text-sm text-gray-500 hover:text-gray-800">{t('top.about')}</a>
           </div>
         </div>
         
@@ -504,7 +504,7 @@ export default function Home() {
             <span>{t('nav.website')}</span>
           </a>
           
-          <div className="text-xs text-gray-400 px-3 py-2 mt-4 nav-group-title">提示词库</div>
+          <div className="text-xs text-gray-400 px-3 py-2 mt-4 nav-group-title">{lang === 'zh' ? '提示词库' : 'Prompt Library'}</div>
           <a href="#" className="nav-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-gray-500" onClick={(e) => { e.preventDefault(); setShowPromptLibrary(true); }}>
             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
             <span>{lang === 'zh' ? '提示词库' : 'Prompts'}</span>
@@ -536,18 +536,20 @@ export default function Home() {
       {/* 主内容区 */}
       <div className="main-content">
         {/* 顶部导航栏 */}
-        <nav className="top-nav h-14 border-b border-gray-200 flex items-center justify-between px-8 bg-white fixed top-0 right-0 z-30">
+        <nav className="top-nav h-14 border-b border-gray-200 flex items-center justify-between px-8 bg-white fixed top-0 left-44 right-0 z-30">
           <div className="flex items-center gap-6">
             <a href="#" className="text-sm text-gray-800 font-medium">{t('top.home')}</a>
             <a href="#" className="text-sm text-gray-500">{t('top.pricing')}</a>
             <a href="#" className="text-sm text-gray-500">{t('top.about')}</a>
           </div>
-          <div className="flex items-center gap-2.5">
-            <div className="moon-container">
-              <div className="moon-base"></div>
-              <div className="moon-shadow"></div>
+          <div className="flex flex-col items-end justify-center">
+            <div className="flex items-center gap-2">
+              <div className="moon-container flex items-center justify-center">
+                <div className="moon-base"></div>
+                <div className="moon-shadow"></div>
+              </div>
+              <h1 style={{ fontFamily: '"Roboto Condensed", "PingFang SC", sans-serif', fontSize: '28.8px', fontWeight: 700, color: '#4a4a4a', textShadow: '0 2px 5px rgba(0, 0, 0, 0.3)', textAlign: 'center', lineHeight: 1.4 }}>{t('subtitle')}</h1>
             </div>
-            <h1 className="text-base font-semibold text-gray-800">{t('subtitle')}</h1>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
@@ -562,8 +564,8 @@ export default function Home() {
         {/* 固定副标题区域 */}
         <div className="fixed-header">
           <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-3">
-              <p className="text-gray-500 text-sm">{t('header.subtext')}</p>
+            <div className="text-center">
+              <p style={{ fontFamily: 'Roboto, "PingFang SC", sans-serif', fontSize: '16px', color: '#666666', textAlign: 'center', lineHeight: 1.5, marginBottom: '15px' }}>{t('header.subtext')}</p>
             </div>
             <div className="flex gap-2 justify-center flex-wrap">
               {(['document', 'image', 'video', 'website'] as ContentType[]).map((type, index) => {
@@ -587,7 +589,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="p-6 max-w-[920px] mx-auto pt-28">
+        <div className="p-6 max-w-[920px] mx-auto pt-16">
           {/* 消息区域 */}
           {message && (
             <div className={message.type === 'error' ? 'error-message' : 'success-message'}>
@@ -743,7 +745,7 @@ export default function Home() {
               <div className="mt-3 pt-3 border-t border-gray-200" onClick={(e) => e.stopPropagation()}>
                 {/* 详细程度选择 */}
                 <div className="flex items-center justify-center gap-2 mb-2">
-                  <span className="text-xs text-gray-500">输出风格：</span>
+                  <span className="text-xs text-gray-500">{lang === 'zh' ? '输出风格：' : 'Output Style: '}</span>
                   {detailLevels.map((level) => (
                     <span
                       key={level.value}

@@ -70,7 +70,7 @@ body {
 .main-content {
   margin-left: 176px;
   min-height: 100vh;
-  padding-top: 112px;
+  padding-top: 127px;
 }
 
 .top-nav {
@@ -334,11 +334,11 @@ body > .nav-item.active,
 .fixed-header {
   position: fixed;
   top: 56px;
-  left: 208px;
+  left: 176px;
   right: 0;
   z-index: 25;
   background: #f5f5f7;
-  padding: 12px 24px;
+  padding: 7px 24px 15px 24px;
 }
 
 /* 月亮图标 */
@@ -349,6 +349,7 @@ body > .nav-item.active,
   background: radial-gradient(circle at 30% 30%, #f5f5f5 0%, #e5e5e5 40%, #d4d4d4 70%, #a3a3a3 100%);
   position: relative;
   flex-shrink: 0;
+  transform-origin: center center;
 }
 
 .moon-95 {
@@ -882,4 +883,24 @@ body > .nav-item.active,
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* 图标点击动画 */
+@keyframes icon-click-rotate {
+  0% {
+    transform: rotate(0deg) scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.2);
+    filter: brightness(1.5);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+    filter: brightness(1);
+  }
+}
+
+.icon-animate {
+  animation: icon-click-rotate 0.3s ease-in-out;
 }
